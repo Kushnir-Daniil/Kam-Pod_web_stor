@@ -1,8 +1,174 @@
+/* Reset */
 * {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
+
+/* Root variables */
+:root{
+    --bg: #FFF2E6;
+    --card: #FFFFFF;
+    --accent: #FF9F1C;
+    --muted: #7A6A59;
+    --shadow: 0 6px 18px rgba(23,18,15,0.08);
+    --radius: 12px;
+}
+
 body{
-    background-color: #FFF2E6;
-    font-family: sans-serif;
+    background: var(--bg);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    color: #2b2b2b;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    line-height: 1.4;
+    min-height: 100vh;
+    padding-bottom: 90px; /* space for bottom nav */
+}
+
+/* Header */
+header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap: 12px;
+    padding: 5% 6% 2% 6%;
+}
+
+.logo{ display:flex; align-items:center; gap:10px; }
+.logo_img{ width:56px; height:56px; object-fit:contain; border-radius:10px }
+.logo_text{ font-size:1.25rem; font-weight:800; color:#1f2a2a; line-height:1 }
+
+.balance{ display:flex; align-items:center; gap:10px; background: rgba(255,255,255,0.85); padding:8px 12px; border-radius:28px; box-shadow: 0 6px 14px rgba(23,18,15,0.06); border:1px solid rgba(16,12,9,0.04) }
+.balance_coin{ width:42px; height:42px; background:transparent }
+.balance_info{ display:flex; flex-direction:column; align-items:flex-start; margin-left:4px }
+.balance_number{ font-weight:800; font-size:1rem }
+.balance_text{ font-size:0.72rem; color:var(--muted); margin-top:2px }
+.balance_arrow{ width:18px; opacity:0.85 }
+
+/* Main banner */
+main{ padding: 0 6% 80px 6%; }
+.banner{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    background: linear-gradient(180deg, rgba(255,250,244,1), rgba(255,248,242,1));
+    padding:16px;
+    border-radius:18px;
+    box-shadow: 0 8px 18px rgba(23,18,15,0.04);
+    border:1px solid rgba(255,159,28,0.08);
+    margin-bottom: 18px;
+}
+.banner_coin{ width:48px; height:48px; border-radius:12px; background:rgba(255,255,255,0.6); display:flex; align-items:center; justify-content:center }
+.banner_info{ display:flex; flex-direction:column }
+.banner_text_bold{ font-weight:800; font-size:1rem; color:#2b2b2b }
+.banner_text{ color:var(--muted); font-size:0.9rem }
+.banner_arrow{ width:18px }
+
+/* Quest card */
+.quest_card{
+    background: var(--card);
+    border-radius:20px;
+    padding:0 14px 16px 14px;
+    box-shadow: 0 14px 36px rgba(23,18,15,0.07);
+    margin: 12px 0;
+    border:1px solid rgba(16,12,9,0.04);
+}
+.quest_image_wrapper{ position:relative; border-radius:14px; overflow:hidden; }
+.quest_image{ width:100%; display:block; height:auto; display:block }
+.quest_tag{
+        position:absolute;
+        left:14px; top:14px;
+        background: rgba(255,255,255,0.95);
+        color:#2b2b2b; padding:8px 12px; border-radius:12px; font-weight:700; font-size:0.75rem; border:1px solid rgba(16,12,9,0.04);
+}
+.quest_time{
+        position:absolute; right:14px; top:14px; display:flex; align-items:center; gap:6px;
+        background: rgba(255,255,255,0.95); color:#2b2b2b; padding:6px 10px; border-radius:12px; font-size:0.8rem; border:1px solid rgba(16,12,9,0.04)
+}
+
+.quest_title{ margin-top:12px; font-size:1.15rem }
+.quest_text{ color:var(--muted); margin-top:6px; font-size:0.95rem }
+
+.quest_actions{ display:flex; align-items:center; justify-content:space-between; margin-top:14px; gap:12px }
+.quest_btn{ display:inline-flex; align-items:center; gap:10px; background:var(--accent); color:#fff; border:none; padding:12px 18px; border-radius:28px; font-weight:800; cursor:pointer; box-shadow: 0 8px 18px rgba(255,159,28,0.12) }
+.quest_btn_icon{ width:18px }
+.quest_heart{ width:40px; height:40px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background:#fff; border:1px solid rgba(16,12,9,0.06); box-shadow: 0 6px 12px rgba(23,18,15,0.04) }
+
+/* Dots navigation */
+.quest_nav{ display:flex; justify-content:center; margin-top:12px }
+.quest_nav ul{ list-style:none; display:flex; gap:8px }
+.quest_nav li{ width:10px; height:6px; border-radius:6px; background:#e6dfd6; display:inline-block; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.03) }
+.quest_nav .quest2{ background:var(--accent); width:22px; height:6px; border-radius:6px }
+
+/* Future plans */
+.future_plans{ display:flex; align-items:center; gap:12px; margin-top:18px; background: linear-gradient(180deg,#fffaf6,#fffaf6); padding:12px; border-radius:16px; border:1px solid rgba(16,12,9,0.03); box-shadow: 0 8px 18px rgba(23,18,15,0.03) }
+.future_plans_img{ width:56px }
+.future_plans_info{ flex:1 }
+.future_plans_title{ font-size:0.98rem; margin-bottom:6px; font-weight:700 }
+.future_plans_text{ color:var(--muted); font-size:0.9rem }
+.future_plans_fortress{ width:56px }
+
+/* Footer navigation (bottom bar) */
+footer{ position:fixed; left:0; right:0; bottom:14px; display:flex; justify-content:center }
+.navigation{ width:92%; max-width:520px; background:#fff; border-radius:28px; padding:10px 18px; box-shadow: 0 18px 48px rgba(23,18,15,0.08); border:1px solid rgba(16,12,9,0.04) }
+.navigation_list{ list-style:none; display:flex; justify-content:space-between; align-items:center; margin:0 }
+.navigation_list li{ display:flex; flex-direction:column; align-items:center; gap:6px; color:var(--muted); font-size:0.78rem }
+.navigation_list li img{ width:22px; height:22px }
+
+/* Responsive */
+@media (max-width:720px){
+    header{ padding:4% 5% 2% 5% }
+    .logo_img{ width:48px }
+    .banner{ padding:12px }
+    .quest_card{ padding:12px }
+    .future_plans{ flex-direction:row }
+}
+
+@media (max-width:420px){
+    body{ padding-bottom:120px }
+    header{ padding:3.5% 5% 1.5% 5%; }
+    .logo_img{ width:44px; height:44px }
+    .logo_text{ font-size:1.05rem }
+    .balance{ padding:6px 10px; border-radius:24px }
+    .balance_coin{ width:36px; height:36px }
+    .balance_number{ font-size:0.95rem }
+
+    main{ padding: 0 5% 120px 5%; }
+    .banner{ padding:12px; gap:10px }
+    .banner_coin{ width:40px; height:40px }
+    .banner_text_bold{ font-size:0.95rem }
+
+    .quest_card{ border-radius:16px; padding:0 12px 12px 12px }
+    .quest_image_wrapper{ margin-top:10px; border-radius:12px }
+    .quest_tag{ left:12px; top:12px; padding:6px 10px; font-size:0.72rem }
+    .quest_time{ right:12px; top:12px; padding:5px 8px; font-size:0.75rem }
+
+    .quest_title{ font-size:1.05rem }
+    .quest_text{ font-size:0.92rem }
+
+    .quest_actions{ display:flex; align-items:center; gap:10px; margin-top:12px }
+    .quest_actions{ display:flex; flex-direction:column; align-items:stretch; gap:10px; margin-top:12px }
+    .quest_btn{ flex:0 0 auto; width:100%; padding:12px 14px; border-radius:22px; font-size:0.95rem }
+    .quest_heart{ width:36px; height:36px; align-self:flex-end; margin-top:4px }
+
+    .quest_nav{ margin-top:10px }
+    .quest_nav li{ height:6px }
+
+    .future_plans{ flex-direction:column; align-items:flex-start; gap:10px }
+    .future_plans_img{ width:56px }
+
+    footer{ bottom:10px }
+    .navigation{ width:96%; padding:8px 12px }
+    .navigation_list li{ font-size:0.72rem }
+    .navigation_list li img{ width:20px; height:20px }
+}
+
+/* Extra small tweaks for very narrow phones */
+@media (max-width:360px){
+    .logo_text{ font-size:1rem }
+    .quest_title{ font-size:1rem }
+    .quest_text{ font-size:0.9rem }
+    .banner_text_bold{ font-size:0.95rem }
+    .future_plans_title{ font-size:0.95rem }
 }
