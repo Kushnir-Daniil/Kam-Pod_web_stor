@@ -38,8 +38,7 @@ header {
 
 .logo {
     display: flex;
-    align-items:
-        center;
+    align-items: center;
     gap: 10px;
 }
 
@@ -54,15 +53,14 @@ header {
     font-size: 1.25rem;
     font-weight: 800;
     color: #1f2a2a;
-    line-height: 1
+    line-height: 1.1;
 }
 
 .balance {
     display: flex;
     align-items: center;
     gap: 10px;
-    background:
-        rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.85);
     padding: 8px 12px;
     border-radius: 28px;
     box-shadow: 0 6px 14px rgba(23, 18, 15, 0.06);
@@ -266,11 +264,12 @@ main {
     box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.03)
 }
 
-.quest_nav .quest2 {
+/* Зміна активної крапки на другу */
+.quest_nav .quest1 {
     background: var(--accent);
     width: 22px;
     height: 6px;
-    border-radius: 6px
+    border-radius: 6px;
 }
 
 /* Future plans */
@@ -308,13 +307,13 @@ main {
 }
 
 .future_plans_fortress {
-    width: 72px;
-    height: 80px;
+    width: 80px;
+    height: 84px;
     object-fit: contain;
     object-position: bottom;
     align-self: flex-end;
     flex-shrink: 0;
-    margin-bottom: -12px;
+    margin-bottom: -10px;
 }
 
 /* Footer navigation (bottom bar) */
@@ -380,7 +379,7 @@ footer {
 
 @media (max-width:420px) {
     body {
-        padding-bottom: 120px
+        padding-bottom: 130px;
     }
 
     header {
@@ -389,136 +388,136 @@ footer {
 
     .logo_img {
         width: 44px;
-        height: 44px
+        height: 44px;
     }
 
     .logo_text {
-        font-size: 1.05rem
+        font-size: 1.05rem;
     }
 
     .balance {
-        padding: 6px 10px;
-        border-radius: 24px
+        padding: 6px 12px;
+        border-radius: 24px;
     }
 
     .balance_coin {
         width: 36px;
-        height: 36px
+        height: 36px;
     }
 
     .balance_number {
-        font-size: 0.95rem
+        font-size: 0.95rem;
     }
 
     main {
-        padding: 0 5% 120px 5%;
+        padding: 0 5% 130px 5%;
     }
 
     .banner {
         padding: 12px;
-        gap: 10px
+        gap: 10px;
     }
 
     .banner_coin {
         width: 40px;
-        height: 40px
+        height: 40px;
     }
 
     .banner_text_bold {
-        font-size: 0.95rem
+        font-size: 0.95rem;
     }
 
     .quest_card {
-        border-radius: 16px;
-        padding: 10px 12px 12px 12px
+        border-radius: 18px;
+        padding: 10px 14px 14px 14px;
     }
 
     .quest_image_wrapper {
         margin-top: 10px;
-        border-radius: 12px
+        border-radius: 14px;
     }
 
     .quest_tag {
         left: 12px;
         top: 12px;
         padding: 6px 10px;
-        font-size: 0.72rem
+        font-size: 0.72rem;
     }
 
     .quest_time {
         right: 12px;
         top: 12px;
         padding: 5px 8px;
-        font-size: 0.75rem
+        font-size: 0.75rem;
     }
 
     .quest_title {
-        font-size: 1.05rem
+        font-size: 1.05rem;
     }
 
     .quest_text {
-        font-size: 0.92rem
+        font-size: 0.92rem;
     }
 
     .quest_actions {
         display: flex;
-        flex-direction: row;
         align-items: center;
         justify-content: space-between;
         gap: 10px;
-        margin-top: 12px
+        margin-top: 12px;
     }
 
     .quest_btn {
         flex: 1;
         padding: 12px 14px;
-        border-radius: 22px;
+        border-radius: 24px;
         font-size: 0.95rem;
-        justify-content: center
+        justify-content: center;
+        min-width: 0;
     }
 
     .quest_heart {
-        width: 44px;
-        height: 44px;
+        width: 42px;
+        height: 42px;
         flex-shrink: 0;
-        align-self: auto;
-        margin-top: 0
+        align-self: flex-start;
+        margin-top: 0;
     }
 
     .quest_nav {
-        margin-top: 10px
+        margin-top: 10px;
     }
 
     .quest_nav li {
-        height: 6px
+        height: 6px;
     }
 
     .future_plans {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
     }
 
     .future_plans_img {
-        width: 56px
+        width: 56px;
     }
 
     footer {
-        bottom: 10px
+        bottom: 10px;
     }
 
     .navigation {
         width: 96%;
-        padding: 8px 12px
+        padding: 8px 10px;
     }
 
     .navigation_list li {
-        font-size: 0.72rem
+        font-size: 0.72rem;
     }
 
     .navigation_list li img {
         width: 20px;
-        height: 20px
+        height: 20px;
     }
 }
 
