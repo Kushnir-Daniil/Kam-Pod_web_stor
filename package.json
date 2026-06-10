@@ -1,0 +1,25 @@
+{
+  "name": "kam-pod_web_stor",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node scripts/dev-server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kushnir-Daniil/Kam-Pod_web_stor.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Kushnir-Daniil/Kam-Pod_web_stor/issues"
+  },
+  "homepage": "https://github.com/Kushnir-Daniil/Kam-Pod_web_stor#readme",
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}
