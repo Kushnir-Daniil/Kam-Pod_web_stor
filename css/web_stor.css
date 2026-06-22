@@ -16,7 +16,7 @@
 }
 
 body {
-    background: var(--bg);
+    background: linear-gradient(180deg, #fff9f1 0%, #fff2e6 100%);
     font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
     color: #2b2b2b;
     -webkit-font-smoothing: antialiased;
@@ -144,34 +144,39 @@ main {
 
 /* Quest card */
 .quest_card {
-    background: var(--card);
+    background: transparent;
     border-radius: 20px;
     box-shadow: 0 14px 36px rgba(23, 18, 15, 0.07);
     margin: 12px 0;
     border: 1px solid rgba(16, 12, 9, 0.04);
-    padding: 12px 14px 14px 14px;
+    padding: 0;
+    overflow: hidden;
+    position: relative;
 }
 
 .quest_image_wrapper {
     position: relative;
-    border-radius: 14px;
+    border-radius: 20px 20px 0 0;
     overflow: hidden;
+    min-height: 300px;
+    background: #f5f1eb;
 }
 
 .quest_image {
     width: 100%;
+    height: 100%;
+    object-fit: cover;
     display: block;
-    height: auto;
 }
 
 .quest_tag {
     position: absolute;
     left: 14px;
     top: 14px;
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.65);
     color: #2b2b2b;
-    padding: 8px 12px;
-    border-radius: 12px;
+    padding: 8px 14px;
+    border-radius: 18px;
     font-weight: 700;
     font-size: 0.75rem;
     border: 1px solid rgba(16, 12, 9, 0.04);
@@ -183,15 +188,21 @@ main {
     top: 14px;
     display: flex;
     align-items: center;
-    gap: 6px;
-    background: rgba(255, 255, 255, 0.95);
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.65);
     color: #2b2b2b;
-    padding: 6px 10px;
-    border-radius: 12px;
+    padding: 10px 14px;
+    min-height: 34px;
+    min-width: 140px;
+    border-radius: 18px;
     font-size: 0.8rem;
     border: 1px solid rgba(16, 12, 9, 0.04);
 }
 
+.quest_time img {
+    width: 16px;
+    height: 16px;
+}
 .quest_title {
     margin-top: 12px;
     font-size: 1.15rem;
@@ -352,11 +363,31 @@ footer {
     gap: 6px;
     color: var(--muted);
     font-size: 0.78rem;
+    padding: 8px 10px;
+    border-radius: 18px;
+    transition: background 0.25s ease, color 0.25s ease, transform 0.2s ease;
+    cursor: pointer;
 }
 
 .navigation_list li img {
     width: 22px;
     height: 22px;
+}
+
+.navigation_list li.active {
+    background: rgba(255, 159, 28, 0.16);
+    color: #1f2a2a;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 28px rgba(255, 159, 28, 0.14);
+}
+
+.navigation_list li.active p {
+    color: #1f2a2a;
+    font-weight: 700;
+}
+
+.navigation_list li.active img {
+    filter: brightness(0) saturate(100%) invert(18%) sepia(88%) saturate(387%) hue-rotate(10deg) brightness(99%) contrast(91%);
 }
 
 /* Responsive */
@@ -430,12 +461,15 @@ footer {
 
     .quest_card {
         border-radius: 16px;
-        padding: 10px 12px 12px 12px;
+        padding: 0;
+        overflow: hidden;
     }
 
     .quest_image_wrapper {
-        margin-top: 4px;
-        border-radius: 12px;
+        margin-top: 0;
+        border-radius: 0;
+        min-height: 300px;
+        background: transparent;
     }
 
     .quest_tag {
@@ -450,6 +484,8 @@ footer {
         top: 12px;
         padding: 5px 8px;
         font-size: 0.75rem;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
     }
 
     .quest_title {
