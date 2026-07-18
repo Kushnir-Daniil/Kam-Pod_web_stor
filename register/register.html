@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Реєстрація</title>
+  <link rel="stylesheet" href="css/register.css">
+</head>
+<body>
+
+    <div class="auth-container">
+        <div class="header-row">
+            <button class="back-btn">
+                <img src="../img/arrow.svg" alt="Назад">
+            </button>
+            <h1>Реєстрація</h1>
+        </div>
+
+        <div class="auth-header">
+            <img src="../img/flower_in_stone.png" alt="Flower">
+            <p>Створіть свій акаунт, щоб почати пригоду!</p>
+        </div>
+
+        <form class="auth-form" id="registerForm">
+
+            <div class="input-group">
+                <img src="../img/people.svg" class="icon-left" alt="">
+                <input type="text" placeholder="Ім'я" required>
+            </div>
+
+            <div class="input-group">
+                <img src="../img/email.svg" class="icon-left" alt="">
+                <input type="email" placeholder="Email" required>
+            </div>
+
+            <div class="input-group">
+                <img src="../img/lock.svg" class="icon-left" alt="">
+                <input type="password" placeholder="Пароль" id="password" required>
+                <img src="../img/eye.svg" class="icon-right" id="togglePassword" alt="">
+            </div>
+
+            <div class="input-group">
+                <img src="../img/lock.svg" class="icon-left" alt="">
+                <input type="password" placeholder="Повторіть пароль" id="passwordConfirm" required>
+                <img src="../img/eye.svg" class="icon-right" id="togglePasswordConfirm" alt="">
+            </div>
+
+            <div class="input-group">
+                <img src="../img/date.svg" class="icon-left" alt="">
+                <input type="date" required>
+            </div>
+
+            <label class="terms">
+                <input type="checkbox" required>
+                <span>Я погоджуюсь з <a href="#">умовами використання</a> та <a href="#">політикою конфіденційності</a></span>
+            </label>
+
+            <button type="submit" class="btn-primary">Створити акаунт</button>
+
+            <div class="divider">або</div>
+
+            <button type="button" class="btn-secondary">
+                <img src="../img/google.png" alt="Google" width="18">
+                Продовжити з Google
+            </button>
+        </form>
+
+        <p class="auth-footer">Вже маєте акаунт? <a href="login.html">Увійти</a></p>
+    </div>
+
+<script type="module" src="js/register.js"></script>
+</body>
+</html>

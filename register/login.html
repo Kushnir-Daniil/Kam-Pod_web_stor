@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Увійти</title>
+  <link rel="stylesheet" href="css/register.css">
+</head>
+<body>
+
+    <div class="auth-container">
+        <div class="auth-header">
+            <img src="../img/flower_in_stone.png" alt="Flower">
+            <h1>Раді бачити вас знову!</h1>
+        </div>
+
+        <form class="auth-form" id="loginForm">
+            <div class="input-group">
+                <img src="../img/email.svg" class="icon-left" alt="">
+                <input type="email" placeholder="Email" required>
+            </div>
+
+            <div class="input-group">
+                <img src="../img/lock.svg" class="icon-left" alt="">
+                <input type="password" placeholder="Пароль" id="loginPassword" required>
+                <img src="../img/eye.svg" class="icon-right" id="toggleLoginPassword" alt="">
+            </div>
+
+            <button type="submit" class="btn-primary">Увійти</button>
+
+            <p class="auth-footer" style="margin-top: 0;"><a href="#">Забули пароль?</a></p>
+
+            <div class="divider">або</div>
+        </form>
+
+        <p class="auth-footer">Немає акаунту? <a href="register.html">Створити акаунт</a></p>
+    </div>
+
+  <script type="module" src="js/register.js"></script>
+</body>
+</html>

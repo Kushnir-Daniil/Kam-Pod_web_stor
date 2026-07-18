@@ -1,0 +1,237 @@
+/* ===== CSS Variables (дизайн-система) ===== */
+:root {
+  --color-bg: #FCF7F3;
+  --color-primary: #F09338;
+  --color-primary-dark: #A55D13;
+  --color-card-bg: #FFFFFF;
+  --color-text: #2E2A26;
+  --color-text-muted: #8A8078;
+  --color-border: #EAE0D5;
+  --color-error: #E05B4E;
+
+  --font-main: 'Poppins', 'Segoe UI', sans-serif;
+
+  --radius-input: 12px;
+  --radius-button: 30px;
+  --radius-card: 20px;
+
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-main);
+  background: var(--color-bg);
+  color: var(--color-text);
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+/* ===== Контейнер сторінки (імітація мобільного екрану) ===== */
+.auth-container {
+  width: 100%;
+  max-width: 420px;
+  padding: var(--spacing-lg) var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100vh;
+  max-height: 900px;
+  margin: 0 auto;
+}
+
+/* ===== Рядок "стрілка назад + заголовок" (тільки для register) ===== */
+.header-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.header-row .back-btn {
+  margin-bottom: 0;
+}
+
+.header-row h1 {
+  font-size: 22px;
+  font-weight: 600;
+  flex: 1;
+  text-align: center;
+  margin-right: 20px; /* компенсує ширину стрілки зліва, щоб текст був по центру картки */
+}
+
+/* ===== Кнопка "назад" ===== */
+.back-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-bottom: var(--spacing-sm);
+}
+
+.back-btn img {
+  width: 20px;
+  height: 20px;
+}
+
+/* ===== Заголовок + ілюстрація (login: h1 тут; register: h1 в .header-row) ===== */
+.auth-header {
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.auth-header img {
+  width: 90px;
+  height: 90px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.auth-header h1 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.auth-header p {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* ===== Форма ===== */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.input-group {
+  position: relative;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 14px 55px 14px 50px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  background: var(--color-card-bg);
+  font-size: 14px;
+  color: var(--color-text);
+  outline: none;
+}
+
+.input-group input:focus {
+  border-color: var(--color-primary);
+}
+
+.input-group .icon-left {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 50px;
+  height: 50px;
+}
+
+.input-group .icon-right {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+/* ===== Чекбокс згоди ===== */
+.terms {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.terms a {
+  color: var(--color-primary-dark);
+  text-decoration: none;
+}
+
+/* ===== Кнопки ===== */
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-button);
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-dark);
+}
+
+.btn-secondary {
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-button);
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+/* ===== Розділювач "або" ===== */
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  margin: var(--spacing-sm) 0;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.divider:not(:empty)::before {
+  margin-right: 10px;
+}
+
+.divider:not(:empty)::after {
+  margin-left: 10px;
+}
+
+/* ===== Підпис знизу ===== */
+.auth-footer {
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-top: var(--spacing-md);
+}
+
+.auth-footer a {
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
