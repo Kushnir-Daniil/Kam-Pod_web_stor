@@ -1,3 +1,5 @@
+import { registerUser, loginUser, setCurrentUser } from "../../user/js/data/usersData.js";
+
 // ===== Показати/приховати пароль =====
 function setupPasswordToggle(toggleBtnId, inputId) {
   const toggleBtn = document.getElementById(toggleBtnId);
@@ -23,26 +25,47 @@ if (registerForm) {
   registerForm.addEventListener("submit", (e) => {
     e.preventDefault();
 
+    const name = document.querySelector("#registerForm input[type='text']").value;
+    const email = document.querySelector("#registerForm input[type='email']").value;
     const password = document.getElementById("password").value;
     const passwordConfirm = document.getElementById("passwordConfirm").value;
+    const birthDate = document.querySelector("#registerForm input[type='date']").value;
 
     if (password !== passwordConfirm) {
       alert("Паролі не співпадають");
       return;
     }
 
-    // Тимчасово: без БД просто переходимо на головну, нічого не зберігається
+    const result = registerUser({ name, email, password, birthDate });
+
+    if (!result.success) {
+      alert(result.error);
+      return;
+    }
+
+    setCurrentUser(result.user);
     window.location.href = "../user/home.html";
   });
 }
 
-// ===== Обробка сабміту форми логіну (якщо на цій же сторінці) =====
+// ===== Обробка сабміту форми логіну =====
 const loginForm = document.getElementById("loginForm");
 
 if (loginForm) {
   loginForm.addEventListener("submit", (e) => {
     e.preventDefault();
-    // Тимчасово: без БД просто переходимо на головну, нічого не зберігається
+
+    const email = document.querySelector("#loginForm input[type='email']").value;
+    const password = document.getElementById("loginPassword").value;
+
+    const result = loginUser(email, password);
+
+    if (!result.success) {
+      alert(result.error);
+      return;
+    }
+
+    setCurrentUser(result.user);
     window.location.href = "../user/home.html";
   });
 }
