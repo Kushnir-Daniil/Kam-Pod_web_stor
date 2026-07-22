@@ -31,8 +31,8 @@ if (registerForm) {
       return;
     }
 
-    // TODO: тут пізніше буде fetch на бекенд для реєстрації
-    console.log("Форма валідна, готова до відправки на бекенд");
+    // Тимчасово: без БД просто переходимо на головну, нічого не зберігається
+    window.location.href = "../user/home.html";
   });
 }
 
@@ -42,7 +42,7 @@ const loginForm = document.getElementById("loginForm");
 if (loginForm) {
   loginForm.addEventListener("submit", (e) => {
     e.preventDefault();
-    // TODO: fetch на бекенд для логіну
-    console.log("Форма логіну валідна, готова до відправки на бекенд");
+    // Тимчасово: без БД просто переходимо на головну, нічого не зберігається
+    window.location.href = "../user/home.html";
   });
 }

@@ -1,0 +1,83 @@
+/* ===== CSS Variables (та сама дизайн-система) ===== */
+:root {
+  --color-bg: #FCF7F3;
+  --color-primary: #F09338;
+  --color-primary-dark: #A55D13;
+  --color-card-bg: #FFFFFF;
+  --color-text: #2E2A26;
+  --color-text-muted: #8A8078;
+  --color-border: #EAE0D5;
+
+  --font-main: 'Poppins', 'Segoe UI', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-main);
+  background: var(--color-bg);
+  color: var(--color-text);
+  min-height: 100vh;
+}
+
+/* ===== Контейнер сторінки (з відступом знизу під фіксовану навігацію) ===== */
+.page-container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px 16px 90px 16px; /* 90px знизу = висота nav + запас */
+  min-height: 100vh;
+}
+
+.page-placeholder {
+  text-align: center;
+  color: var(--color-text-muted);
+  margin-top: 100px;
+  font-size: 15px;
+}
+
+/* ===== Нижня навігація ===== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--color-card-bg);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.nav-item img {
+  width: 22px;
+  height: 22px;
+  opacity: 0.5;
+}
+
+/* ===== Активний пункт (поточна сторінка) ===== */
+.nav-item.active {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.nav-item.active img {
+  opacity: 1;
+  filter: brightness(0) saturate(100%) invert(56%) sepia(75%) saturate(1352%) hue-rotate(345deg) brightness(101%) contrast(101%);
+}
