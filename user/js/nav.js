@@ -1,7 +1,7 @@
 const NAV_ITEMS = [
   { page: "home.html", icon: "house.png", label: "Головна", path: "../user/home.html" },
   { page: "community.html", icon: "group_people.png", label: "Спільнота", path: "../user/community.html" },
-  { page: "quests.html", icon: "tower.svg", label: "Квести", path: "../user/quests.html" },
+  { page: "quests.html", icon: "navigation_tower.png", label: "Квести", path: "../user/quests.html" },
   { page: "profile.html", icon: "person.png", label: "Профіль", path: "../user/profile.html" },
 ];
 
