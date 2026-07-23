@@ -1,17 +1,4 @@
-const DEFAULT_STORIES = [
-  {
-    id: 1,
-    title: "Таємниці Папської вежі",
-    type: "Комікс",
-    duration: "15 хв",
-    description: "Допоможи драконичу знайти давню книгу знань і відкрити секрети найвищої вежі фортеці.",
-    image: "quest1.jpg",
-    status: "active",
-    progress: 60,
-    content: null // сюди пізніше піде структура комікс/казка/гра, коли буде дизайн
-  },
-  // інші історії аналогічно, content: null
-];
+const DEFAULT_STORIES = [];
 
 export function getStories() {
   const stored = localStorage.getItem("stories");
@@ -29,7 +16,7 @@ export function saveStories(stories) {
 export function addStory(story) {
   const stories = getStories();
   story.id = stories.length ? Math.max(...stories.map(s => s.id)) + 1 : 1;
-  story.content = null; // поле під майбутнє наповнення
+  story.content = null; // поле під майбутнє наповнення (комікс/казка/гра)
   stories.push(story);
   saveStories(stories);
   return stories;

@@ -9,6 +9,11 @@ function renderQuests(filterText = "") {
     q.type.toLowerCase().includes(filterText.toLowerCase())
      );
 
+    if (quests.length === 0) {
+      list.innerHTML = `<p class="page-placeholder">Історій поки немає</p>`;
+      return;
+    }
+
     list.innerHTML = quests.map(quest => `
         <div class="quest-card">
         <img src="../img/${quest.image}" alt="${quest.title}">

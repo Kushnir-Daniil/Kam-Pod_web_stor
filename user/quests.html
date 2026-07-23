@@ -5,16 +5,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Квести</title>
   <link rel="stylesheet" href="css/user.css">
+  <link rel="stylesheet" href="css/quests.css">
 </head>
 <body>
 
     <div class="page-container">
-        <p class="page-placeholder">Сторінка квестів (в розробці)</p>
+
+        <div class="page-header">
+            <div>
+                <h1>Квести</h1>
+                <p>Обирай пригоду та проходь квести</p>
+            </div>
+            <div class="coin-badge">
+                <img src="../img/coin1.png" alt="">
+                <span>24</span>
+                <small>монети</small>
+            </div>
+        </div>
+
+        <div class="tabs-row">
+            <button class="tab-btn active" data-tab="stories">📖 Історії</button>
+            <button class="tab-btn" data-tab="filters">⚙ Фільтри</button>
+            <button class="tab-btn" data-tab="achievements">⭐ Досягнення</button>
+            <button class="tab-btn" data-tab="special">🎁 Спеціальні</button>
+        </div>
+
+        <div class="search-row">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="questSearch" placeholder="Пошук за назвою або жанром">
+            </div>
+            <button class="filter-btn">⚙ Фільтри</button>
+        </div>
+
+        <div class="quest-list" id="questList">
+            <!-- рендериться через JS -->
+        </div>
+
     </div>
 
     <div id="nav-placeholder"></div>
 
     <script type="module" src="js/nav.js"></script>
     <script type="module" src="js/user.js"></script>
+    <script type="module" src="js/quests.js"></script>
 </body>
 </html>
