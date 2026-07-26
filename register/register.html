@@ -4,7 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Реєстрація</title>
-  <link rel="stylesheet" href="css/register.css">
+  <script>
+    (function () {
+      const { pathname, search, hash } = location;
+      if (/\/register$/i.test(pathname)) {
+        location.replace(pathname + "/" + search + hash);
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="./css/register.css">
 </head>
 <body>
 
@@ -68,6 +76,6 @@
         <p class="auth-footer">Вже маєте акаунт? <a href="index.html">Увійти</a></p>
     </div>
 
-<script type="module" src="js/register.js"></script>
+<script type="module" src="./js/register.js"></script>
 </body>
 </html>
