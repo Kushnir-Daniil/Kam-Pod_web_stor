@@ -4,7 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Увійти</title>
-  <link rel="stylesheet" href="css/register.css">
+  <script>
+    // /register без слеша ламає відносні css/js (404) — сервер serve так відкриває папку
+    (function () {
+      const { pathname, search, hash } = location;
+      if (/\/register$/i.test(pathname)) {
+        location.replace(pathname + "/" + search + hash);
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="./css/register.css">
 </head>
 <body>
 
@@ -33,9 +42,9 @@
             <div class="divider">або</div>
         </form>
 
-        <p class="auth-footer">Немає акаунту? <a href="register.html">Створити акаунт</a></p>
+        <p class="auth-footer">Немає акаунту? <a href="./register.html">Створити акаунт</a></p>
     </div>
 
-  <script type="module" src="js/register.js"></script>
+  <script type="module" src="./js/register.js"></script>
 </body>
 </html>

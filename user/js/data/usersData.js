@@ -1,58 +1,132 @@
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  updateProfile,
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+import { auth, db } from "../firebase.js";
+
 const ADMIN_EMAILS = [
   "kn1b24.kushnir@kpnu.edu.ua",
 ];
 
-// ===== Отримати всіх користувачів =====
-function getUsers() {
-  const stored = localStorage.getItem("users");
-  return stored ? JSON.parse(stored) : [];
-}
-
-function saveUsers(users) {
-  localStorage.setItem("users", JSON.stringify(users));
-}
-
-// ===== Реєстрація нового користувача =====
-export function registerUser({ name, email, password, birthDate }) {
-  const users = getUsers();
-  const normalizedEmail = email.trim().toLowerCase();
-
-  if (users.some(u => u.email === normalizedEmail)) {
-    return { success: false, error: "Користувач з таким email вже існує" };
+function mapAuthError(error) {
+  switch (error?.code) {
+    case "auth/email-already-in-use":
+      return "Користувач з таким email вже існує";
+    case "auth/invalid-email":
+      return "Невірний формат email";
+    case "auth/weak-password":
+      return "Пароль має містити щонайменше 6 символів";
+    case "auth/user-not-found":
+    case "auth/wrong-password":
+    case "auth/invalid-credential":
+      return "Невірний email або пароль";
+    case "auth/too-many-requests":
+      return "Забагато спроб. Спробуйте пізніше";
+    case "permission-denied":
+      return "Немає доступу до бази даних. Перевірте Firestore Rules";
+    default:
+      return error?.message || "Сталася помилка. Спробуйте ще раз";
   }
+}
 
-  const newUser = {
-    id: users.length ? Math.max(...users.map(u => u.id)) + 1 : 1,
-    name,
-    email: normalizedEmail,
-    password, // тимчасово у відкритому вигляді, поки нема реального бекенду з хешуванням
-    birthDate,
-    isAdmin: ADMIN_EMAILS.includes(normalizedEmail),
-    coins: 0,
-    createdAt: new Date().toISOString()
+function buildUser(uid, data) {
+  return {
+    id: uid,
+    name: data.name || "",
+    email: data.email || "",
+    birthDate: data.birthDate || "",
+    isAdmin: Boolean(data.isAdmin),
+    coins: data.coins ?? 0,
+    xp: data.xp ?? 0,
+    createdAt: data.createdAt || null,
   };
-
-  users.push(newUser);
-  saveUsers(users);
-
-  return { success: true, user: newUser };
 }
 
-// ===== Логін (перевірка email + пароль) =====
-export function loginUser(email, password) {
-  const users = getUsers();
+async function fetchUserProfile(uid) {
+  const snap = await getDoc(doc(db, "users", uid));
+  if (!snap.exists()) return null;
+  return buildUser(uid, snap.data());
+}
+
+// ===== Реєстрація =====
+export async function registerUser({ name, email, password, birthDate }) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const trimmedName = name.trim();
+
+  try {
+    const credential = await createUserWithEmailAndPassword(
+      auth,
+      normalizedEmail,
+      password,
+    );
+    const { user } = credential;
+
+    await updateProfile(user, { displayName: trimmedName });
+
+    const profile = {
+      name: trimmedName,
+      email: normalizedEmail,
+      birthDate,
+      isAdmin: ADMIN_EMAILS.includes(normalizedEmail),
+      coins: 0,
+      xp: 0,
+      createdAt: serverTimestamp(),
+    };
+
+    await setDoc(doc(db, "users", user.uid), profile);
+
+    return {
+      success: true,
+      user: buildUser(user.uid, {
+        ...profile,
+        createdAt: new Date().toISOString(),
+      }),
+    };
+  } catch (error) {
+    return { success: false, error: mapAuthError(error) };
+  }
+}
+
+// ===== Логін =====
+export async function loginUser(email, password) {
   const normalizedEmail = email.trim().toLowerCase();
 
-  const user = users.find(u => u.email === normalizedEmail && u.password === password);
+  try {
+    const credential = await signInWithEmailAndPassword(
+      auth,
+      normalizedEmail,
+      password,
+    );
+    const profile = await fetchUserProfile(credential.user.uid);
 
-  if (!user) {
-    return { success: false, error: "Невірний email або пароль" };
+    if (!profile) {
+      return {
+        success: false,
+        error: "Профіль користувача не знайдено в базі даних",
+      };
+    }
+
+    return { success: true, user: profile };
+  } catch (error) {
+    return { success: false, error: mapAuthError(error) };
   }
-
-  return { success: true, user };
 }
 
-// ===== Поточна залогінена сесія =====
+export async function logoutUser() {
+  await signOut(auth);
+  localStorage.removeItem("currentUser");
+  localStorage.removeItem("isAdmin");
+}
+
+// ===== Кеш сесії (для навігації / isAdmin) =====
 export function setCurrentUser(user) {
   localStorage.setItem("currentUser", JSON.stringify(user));
   localStorage.setItem("isAdmin", user.isAdmin ? "true" : "false");
