@@ -1,4 +1,4 @@
-import { registerUser, loginUser, setCurrentUser } from "../../user/js/data/usersData.js";
+import { registerUser, loginUser, setCurrentUser } from "../../shared/js/data/usersData.js";
 
 // ===== Показати/приховати пароль =====
 function setupPasswordToggle(toggleBtnId, inputId) {

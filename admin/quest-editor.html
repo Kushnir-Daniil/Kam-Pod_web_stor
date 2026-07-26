@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Адмін — Конструктор квесту</title>
+  <link rel="stylesheet" href="../user/css/user.css">
+  <link rel="stylesheet" href="../user/css/quests.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+    <div class="page-container editor-page">
+        <header class="quest-player-header">
+            <a href="quests.html" class="quest-back" aria-label="Назад">←</a>
+            <div class="quest-player-heading">
+                <p class="quest-player-step">Конструктор</p>
+                <h1 id="editorTitle">Новий квест</h1>
+            </div>
+        </header>
+
+        <div class="quest-mode-tabs" role="tablist">
+            <button type="button" class="quest-mode-tab active" data-tab="meta">Мета</button>
+            <button type="button" class="quest-mode-tab" data-tab="story">Історія</button>
+            <button type="button" class="quest-mode-tab" data-tab="comic">Комікс</button>
+            <button type="button" class="quest-mode-tab" data-tab="game">Гра</button>
+        </div>
+
+        <!-- МЕТА -->
+        <section class="editor-panel active" data-panel="meta">
+            <label class="editor-field">
+                <span>Назва</span>
+                <input type="text" id="metaTitle" placeholder="Таємниці Папської вежі" required>
+            </label>
+            <label class="editor-field">
+                <span>Тип / жанр</span>
+                <input type="text" id="metaType" placeholder="Комікс, Казка, Пригода…">
+            </label>
+            <label class="editor-field">
+                <span>Тривалість</span>
+                <input type="text" id="metaDuration" placeholder="15 хв">
+            </label>
+            <label class="editor-field">
+                <span>Опис для картки</span>
+                <textarea id="metaDescription" rows="3" placeholder="Короткий опис пригоди"></textarea>
+            </label>
+            <label class="editor-field">
+                <span>Обкладинка</span>
+                <input type="file" id="metaCover" accept="image/*">
+                <img id="metaCoverPreview" class="editor-preview" alt="" hidden>
+            </label>
+            <div class="editor-row">
+                <label class="editor-field">
+                    <span>XP</span>
+                    <input type="number" id="metaXp" min="0" value="20">
+                </label>
+                <label class="editor-field">
+                    <span>Монети</span>
+                    <input type="number" id="metaCoins" min="0" value="10">
+                </label>
+                <label class="editor-field">
+                    <span>Кристали</span>
+                    <input type="number" id="metaCrystals" min="0" value="1">
+                </label>
+            </div>
+        </section>
+
+        <!-- ІСТОРІЯ -->
+        <section class="editor-panel" data-panel="story">
+            <p class="editor-hint">Додай сторінки: картинка + заголовок + текст (+ цитата).</p>
+            <div id="storyPages"></div>
+            <button type="button" class="btn-secondary-editor" id="addStoryPage">+ Сторінка історії</button>
+        </section>
+
+        <!-- КОМІКС -->
+        <section class="editor-panel" data-panel="comic">
+            <p class="editor-hint">Додай сцени: картинка + репліки персонажів.</p>
+            <div id="comicScenes"></div>
+            <button type="button" class="btn-secondary-editor" id="addComicScene">+ Сцена коміксу</button>
+        </section>
+
+        <!-- ГРА -->
+        <section class="editor-panel" data-panel="game">
+            <label class="editor-field">
+                <span>Білд гри (папка в builds/)</span>
+                <select id="gameBuild">
+                    <option value="">— не вибрано —</option>
+                    <option value="game-1">game-1 (Living stone)</option>
+                </select>
+            </label>
+            <label class="editor-field">
+                <span>Відкривати гру після</span>
+                <select id="gameLock">
+                    <option value="story">Історії</option>
+                    <option value="comic">Коміксу</option>
+                    <option value="both">Історії і коміксу</option>
+                    <option value="none">Одразу (без блокування)</option>
+                </select>
+            </label>
+            <p class="editor-hint">Білд уже має лежати в <code>builds/game-1/</code>. Адмін лише прив’язує його до квесту. Картинки стискаються автоматично.</p>
+        </section>
+
+        <div class="editor-actions">
+            <button type="button" class="btn-logout" id="saveQuestBtn">Зберегти квест</button>
+            <p id="saveStatus" class="editor-status" hidden></p>
+        </div>
+    </div>
+
+    <div id="nav-placeholder"></div>
+
+    <script type="module" src="../shared/js/nav.js"></script>
+    <script type="module" src="js/quest-editor.js"></script>
+</body>
+</html>

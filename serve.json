@@ -1,0 +1,9 @@
+{
+  "cleanUrls": false,
+  "directoryListing": false,
+  "rewrites": [
+    { "source": "/register/register", "destination": "/register/register.html" },
+    { "source": "/register", "destination": "/register/index.html" },
+    { "source": "/register/", "destination": "/register/index.html" }
+  ]
+}
