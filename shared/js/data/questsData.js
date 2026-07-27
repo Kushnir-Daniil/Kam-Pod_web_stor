@@ -1,6 +1,5 @@
 import {
   collection,
-  collectionGroup,
   doc,
   getDoc,
   getDocs,
@@ -9,7 +8,6 @@ import {
   deleteDoc,
   query,
   where,
-  limit,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
@@ -34,7 +32,7 @@ export const QUEST_STATUS_LABELS = Object.freeze({
 
 /**
  * Порожній квест під конструктор.
- * У Firestore: users/{authorId}/quests/{questId}
+ * У Firestore: quests/{questId}  (authorId — поле документа)
  */
 export function createEmptyQuest(partial = {}) {
   return {
@@ -97,44 +95,12 @@ async function ensureAuth() {
   return user;
 }
 
-function moderationRef(questId) {
-  return doc(db, "moderationQueue", String(questId));
+function questsCol() {
+  return collection(db, "quests");
 }
 
-/**
- * Окрема черга для адміна (працює між браузерами без collection group index).
- * Повний квест лишається в users/{uid}/quests/{id}.
- */
-async function syncModerationQueue(quest) {
-  if (!quest?.id || !quest?.authorId) return;
-
-  const ref = moderationRef(quest.id);
-  if (quest.status === QUEST_STATUS.PENDING_REVIEW) {
-    const cover = quest.coverImage || "";
-    await setDoc(ref, {
-      questId: quest.id,
-      authorId: quest.authorId,
-      authorName: quest.authorName || "",
-      title: quest.title || "",
-      type: quest.type || "",
-      duration: quest.duration || "",
-      description: quest.description || "",
-      // обкладинка може бути величезним data URL — у чергу кладемо лише короткі URL
-      coverImage: cover.startsWith("data:") ? "" : cover,
-      status: QUEST_STATUS.PENDING_REVIEW,
-      submittedAt: serverTimestamp(),
-    });
-  } else {
-    await deleteDoc(ref).catch(() => {});
-  }
-}
-
-function questsCol(uid) {
-  return collection(db, "users", uid, "quests");
-}
-
-function questRef(authorId, questId) {
-  return doc(db, "users", authorId, "quests", String(questId));
+function questRef(questId) {
+  return doc(db, "quests", String(questId));
 }
 
 function mapQuestDoc(snap) {
@@ -143,7 +109,7 @@ function mapQuestDoc(snap) {
   return createEmptyQuest({
     ...data,
     id: data.id || snap.id,
-    authorId: data.authorId || snap.ref.parent.parent.id,
+    authorId: data.authorId || null,
   });
 }
 
@@ -198,7 +164,7 @@ function mapFirestoreError(error) {
     return "Квест завеликий для збереження (ліміт ~1 МБ). Зменшіть картинки або кількість сторінок.";
   }
   if (code === "failed-precondition") {
-    return "Потрібен індекс Firestore (Collection group: quests → status). Створіть його в Console за посиланням з помилки.";
+    return "Потрібен індекс Firestore. Створіть його в Console за посиланням з помилки.";
   }
   return error?.message || "Помилка збереження квесту";
 }
@@ -207,94 +173,73 @@ export function isPublished(quest) {
   return quest?.status === QUEST_STATUS.PUBLISHED;
 }
 
-/** Квести поточного казкаря: users/{uid}/quests */
+/** Квести казкаря: quests where authorId == uid */
 export async function getQuests(authorId = null) {
   await ensureAuth();
   const uid = authorId || auth.currentUser?.uid;
   if (!uid) return [];
 
-  const snap = await getDocs(questsCol(uid));
-  return snap.docs
-    .map(mapQuestDoc)
-    .filter(Boolean)
-    .sort((a, b) => String(a.title).localeCompare(String(b.title), "uk"));
+  try {
+    const q = query(questsCol(), where("authorId", "==", uid));
+    const snap = await getDocs(q);
+    return snap.docs
+      .map(mapQuestDoc)
+      .filter(Boolean)
+      .sort((a, b) => String(a.title).localeCompare(String(b.title), "uk"));
+  } catch (error) {
+    throw new Error(mapFirestoreError(error));
+  }
 }
 
-/** Усі опубліковані квести (будь-який казкар) */
+/** Усі опубліковані квести (каталог) */
 export async function getPublishedQuests() {
   await ensureAuth();
-  const q = query(
-    collectionGroup(db, "quests"),
-    where("status", "==", QUEST_STATUS.PUBLISHED),
-  );
-  const snap = await getDocs(q);
-  return snap.docs
-    .map(mapQuestDoc)
-    .filter(Boolean)
-    .sort((a, b) => String(a.title).localeCompare(String(b.title), "uk"));
+  try {
+    const q = query(questsCol(), where("status", "==", QUEST_STATUS.PUBLISHED));
+    const snap = await getDocs(q);
+    return snap.docs
+      .map(mapQuestDoc)
+      .filter(Boolean)
+      .sort((a, b) => String(a.title).localeCompare(String(b.title), "uk"));
+  } catch (error) {
+    throw new Error(mapFirestoreError(error));
+  }
 }
 
-/** Черга модерації (між браузерами) */
+/** Черга модерації: quests where status == pending_review */
 export async function getPendingReviewQuests() {
   await ensureAuth();
   try {
-    const snap = await getDocs(collection(db, "moderationQueue"));
+    const q = query(questsCol(), where("status", "==", QUEST_STATUS.PENDING_REVIEW));
+    const snap = await getDocs(q);
     return snap.docs
-      .map((d) => {
-        const data = d.data();
-        return createEmptyQuest({
-          id: data.questId || d.id,
-          authorId: data.authorId || null,
-          authorName: data.authorName || "",
-          title: data.title || "",
-          type: data.type || "",
-          duration: data.duration || "",
-          description: data.description || "",
-          coverImage: data.coverImage || "",
-          status: QUEST_STATUS.PENDING_REVIEW,
-        });
-      })
+      .map(mapQuestDoc)
+      .filter(Boolean)
       .sort((a, b) => String(a.authorName).localeCompare(String(b.authorName), "uk"));
   } catch (error) {
     throw new Error(mapFirestoreError(error));
   }
 }
 
-/**
- * Знайти квест за id.
- * Спочатку в акаунті автора (якщо відомий), інакше collection group по полю id.
- */
-export async function getQuestById(id, authorId = null) {
+/** Знайти квест за id: quests/{id} */
+export async function getQuestById(id, _authorIdIgnored = null) {
   await ensureAuth();
   const questId = String(id || "");
   if (!questId) return null;
 
-  if (authorId) {
-    const snap = await getDoc(questRef(authorId, questId));
+  try {
+    const snap = await getDoc(questRef(questId));
     return mapQuestDoc(snap);
+  } catch (error) {
+    throw new Error(mapFirestoreError(error));
   }
-
-  const me = auth.currentUser?.uid;
-  if (me) {
-    const own = await getDoc(questRef(me, questId));
-    if (own.exists()) return mapQuestDoc(own);
-  }
-
-  const q = query(
-    collectionGroup(db, "quests"),
-    where("id", "==", questId),
-    limit(1),
-  );
-  const snap = await getDocs(q);
-  if (snap.empty) return null;
-  return mapQuestDoc(snap.docs[0]);
 }
 
 export async function addQuest(partial = {}) {
   try {
     await ensureAuth();
     const uid = requireUid();
-    const ref = doc(questsCol(uid));
+    const ref = doc(questsCol());
     const payload = toFirestorePayload({
       ...partial,
       id: ref.id,
@@ -309,36 +254,31 @@ export async function addQuest(partial = {}) {
       updatedAt: serverTimestamp(),
     });
 
-    const created = createEmptyQuest(payload);
-    await syncModerationQueue(created);
-    return created;
+    return createEmptyQuest(payload);
   } catch (error) {
     throw new Error(mapFirestoreError(error));
   }
 }
 
-export async function updateQuest(id, patch = {}) {
+export async function updateQuest(id, patch = {}, _authorIdIgnored = null) {
   try {
     await ensureAuth();
-    const current = await getQuestById(id, patch.authorId || null);
+    const current = await getQuestById(id);
     if (!current) return null;
 
-    const authorId = current.authorId || requireUid();
     const next = toFirestorePayload({
       ...current,
       ...patch,
       id: current.id,
-      authorId,
+      authorId: current.authorId || requireUid(),
     });
 
-    await updateDoc(questRef(authorId, current.id), {
+    await updateDoc(questRef(current.id), {
       ...next,
       updatedAt: serverTimestamp(),
     });
 
-    const saved = createEmptyQuest(next);
-    await syncModerationQueue(saved);
-    return saved;
+    return createEmptyQuest(next);
   } catch (error) {
     throw new Error(mapFirestoreError(error));
   }
@@ -382,11 +322,10 @@ export async function rejectQuest(id, reviewerId = null, note = "") {
   });
 }
 
-export async function deleteQuest(id, authorId = null) {
-  const current = await getQuestById(id, authorId);
-  if (!current?.authorId) return false;
-  await deleteDoc(questRef(current.authorId, current.id));
-  await deleteDoc(moderationRef(current.id)).catch(() => {});
+export async function deleteQuest(id) {
+  const current = await getQuestById(id);
+  if (!current?.id) return false;
+  await deleteDoc(questRef(current.id));
   return true;
 }
 
