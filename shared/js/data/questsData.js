@@ -15,7 +15,7 @@ export const QUEST_STATUS = Object.freeze({
 });
 
 export const QUEST_STATUS_LABELS = Object.freeze({
-  [QUEST_STATUS.DRAFT]: "Не завершено / не опубліковано",
+  [QUEST_STATUS.DRAFT]: "У чорнетці",
   [QUEST_STATUS.PENDING_REVIEW]: "На розгляді",
   [QUEST_STATUS.REJECTED]: "Відхилено",
   [QUEST_STATUS.PUBLISHED]: "Опубліковано",
@@ -273,11 +273,21 @@ export async function updateQuest(id, patch) {
 }
 
 export async function submitQuestForReview(id) {
+  // Кожна «публікація» знову йде на модерацію і зникає з каталогу гравців
   return updateQuest(id, {
     status: QUEST_STATUS.PENDING_REVIEW,
+    publishedAt: null,
     reviewNote: "",
     reviewedBy: null,
     reviewedAt: null,
+  });
+}
+
+export async function saveQuestAsDraft(id, patch = {}) {
+  return updateQuest(id, {
+    ...patch,
+    status: QUEST_STATUS.DRAFT,
+    publishedAt: null,
   });
 }
 

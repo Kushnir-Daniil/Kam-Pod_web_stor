@@ -6,6 +6,7 @@ import {
   QUEST_STATUS,
   QUEST_STATUS_LABELS,
   submitQuestForReview,
+  saveQuestAsDraft,
 } from "../../shared/js/data/questsData.js";
 import { getCurrentUser } from "../../shared/js/data/usersData.js";
 
@@ -171,17 +172,114 @@ const gameLock = document.getElementById("gameLock");
 const storyPagesEl = document.getElementById("storyPages");
 const comicScenesEl = document.getElementById("comicScenes");
 const saveBtn = document.getElementById("saveQuestBtn");
-const submitReviewBtn = document.getElementById("submitReviewBtn");
+const publishQuestBtn = document.getElementById("publishQuestBtn");
 const saveStatus = document.getElementById("saveStatus");
 
-function syncSubmitButton() {
-  if (!submitReviewBtn) return;
-  const canSubmit =
-    draft.id &&
-    (draft.status === QUEST_STATUS.DRAFT ||
-      draft.status === QUEST_STATUS.REJECTED ||
-      !draft.status);
-  submitReviewBtn.hidden = !canSubmit;
+function buildPayload(currentUser, statusOverride) {
+  return {
+    title: metaTitle.value.trim(),
+    type: metaType.value.trim(),
+    duration: metaDuration.value.trim(),
+    description: metaDescription.value.trim(),
+    coverImage: draft.coverImage || "",
+    authorId: draft.authorId || currentUser?.id || null,
+    authorName: draft.authorName || currentUser?.name || "",
+    status: statusOverride,
+    reviewNote: draft.reviewNote || "",
+    reviewedBy: draft.reviewedBy || null,
+    reviewedAt: draft.reviewedAt || null,
+    publishedAt: null,
+    rewards: {
+      xp: Number(metaXp.value) || 0,
+      coins: Number(metaCoins.value) || 0,
+      crystals: Number(metaCrystals.value) || 0,
+    },
+    story: { pages: draft.story.pages },
+    comic: { scenes: draft.comic.scenes },
+    game: {
+      buildFolder: gameBuild.value,
+      lockedUntil: gameLock.value,
+      geo: draft.game.geo || null,
+    },
+  };
+}
+
+async function persistQuest({ asDraft, asPublish }) {
+  const title = metaTitle.value.trim();
+  if (!title) {
+    alert("Вкажи назву квесту");
+    return;
+  }
+
+  const currentUser = getCurrentUser();
+  const targetStatus = asPublish
+    ? QUEST_STATUS.PENDING_REVIEW
+    : QUEST_STATUS.DRAFT;
+
+  if (asPublish) {
+    const ok = confirm(
+      draft.status === QUEST_STATUS.PUBLISHED
+        ? "Квест зникне з каталогу гравців і знову піде на перевірку адміну. Продовжити?"
+        : "Надіслати квест адміну на перевірку?",
+    );
+    if (!ok) return;
+  } else if (draft.status === QUEST_STATUS.PUBLISHED) {
+    const ok = confirm(
+      "Збереження в чорнетку приховає квест з каталогу гравців. Продовжити?",
+    );
+    if (!ok) return;
+  }
+
+  const payload = buildPayload(currentUser, targetStatus);
+  saveBtn.disabled = true;
+  if (publishQuestBtn) publishQuestBtn.disabled = true;
+  saveBtn.textContent = "Збереження…";
+  if (publishQuestBtn && asPublish) publishQuestBtn.textContent = "Публікація…";
+
+  try {
+    if (draft.id) {
+      const updated = asDraft
+        ? await saveQuestAsDraft(draft.id, payload)
+        : await updateQuest(draft.id, {
+            ...payload,
+            status: QUEST_STATUS.PENDING_REVIEW,
+            publishedAt: null,
+            reviewNote: "",
+            reviewedBy: null,
+            reviewedAt: null,
+          });
+      Object.assign(draft, updated);
+    } else {
+      const created = await addQuest(payload);
+      Object.assign(draft, created);
+      history.replaceState(null, "", `quest-editor.html?id=${created.id}`);
+      document.getElementById("editorTitle").textContent = "Редагування квесту";
+
+      if (asPublish) {
+        const updated = await submitQuestForReview(created.id);
+        Object.assign(draft, updated);
+      }
+    }
+
+    saveStatus.hidden = false;
+    saveStatus.classList.remove("error");
+    if (asPublish) {
+      saveStatus.textContent =
+        "Надіслано на перевірку. Квест знято з каталогу, доки адмін не погодить.";
+    } else {
+      saveStatus.textContent = `Збережено в чорнетці (${QUEST_STATUS_LABELS[QUEST_STATUS.DRAFT]}).`;
+    }
+  } catch (err) {
+    console.error(err);
+    saveStatus.hidden = false;
+    saveStatus.classList.add("error");
+    saveStatus.textContent = err?.message || "Помилка збереження";
+  } finally {
+    saveBtn.disabled = false;
+    if (publishQuestBtn) publishQuestBtn.disabled = false;
+    saveBtn.textContent = "Зберегти в чорнетку";
+    if (publishQuestBtn) publishQuestBtn.textContent = "Опублікувати";
+  }
 }
 
 function fillMetaFields() {
@@ -365,101 +463,8 @@ comicScenesEl.addEventListener("input", (e) => {
   }
 });
 
-saveBtn.addEventListener("click", async () => {
-  const title = metaTitle.value.trim();
-  if (!title) {
-    alert("Вкажи назву квесту");
-    return;
-  }
-
-  const currentUser = getCurrentUser();
-
-  const payload = {
-    title,
-    type: metaType.value.trim(),
-    duration: metaDuration.value.trim(),
-    description: metaDescription.value.trim(),
-    coverImage: draft.coverImage || "",
-    authorId: draft.authorId || currentUser?.id || null,
-    authorName: draft.authorName || currentUser?.name || "",
-    status: draft.status || QUEST_STATUS.DRAFT,
-    reviewNote: draft.reviewNote || "",
-    reviewedBy: draft.reviewedBy || null,
-    reviewedAt: draft.reviewedAt || null,
-    publishedAt: draft.publishedAt || null,
-    rewards: {
-      xp: Number(metaXp.value) || 0,
-      coins: Number(metaCoins.value) || 0,
-      crystals: Number(metaCrystals.value) || 0,
-    },
-    story: { pages: draft.story.pages },
-    comic: { scenes: draft.comic.scenes },
-    game: {
-      buildFolder: gameBuild.value,
-      lockedUntil: gameLock.value,
-      geo: draft.game.geo || null,
-    },
-  };
-
-  saveBtn.disabled = true;
-  saveBtn.textContent = "Збереження…";
-
-  try {
-    if (draft.id) {
-      const updated = await updateQuest(draft.id, payload);
-      Object.assign(draft, updated);
-    } else {
-      const created = await addQuest(payload);
-      draft.id = created.id;
-      draft.status = created.status;
-      draft.authorId = created.authorId;
-      draft.authorName = created.authorName;
-      history.replaceState(null, "", `quest-editor.html?id=${created.id}`);
-      document.getElementById("editorTitle").textContent = "Редагування квесту";
-    }
-
-    syncSubmitButton();
-    saveStatus.hidden = false;
-    saveStatus.classList.remove("error");
-    const statusLabel = QUEST_STATUS_LABELS[draft.status] || draft.status;
-    saveStatus.textContent = `Збережено (${statusLabel}).`;
-  } catch (err) {
-    console.error(err);
-    saveStatus.hidden = false;
-    saveStatus.classList.add("error");
-    saveStatus.textContent = err?.message || "Помилка збереження";
-  } finally {
-    saveBtn.disabled = false;
-    saveBtn.textContent = "Зберегти чернетку";
-  }
-});
-
-submitReviewBtn?.addEventListener("click", async () => {
-  if (!draft.id) {
-    alert("Спочатку збережіть квест");
-    return;
-  }
-  if (!confirm("Надіслати квест адміну на розгляд?")) return;
-
-  submitReviewBtn.disabled = true;
-  submitReviewBtn.textContent = "Надсилання…";
-  try {
-    const updated = await submitQuestForReview(draft.id);
-    Object.assign(draft, updated);
-    syncSubmitButton();
-    saveStatus.hidden = false;
-    saveStatus.classList.remove("error");
-    saveStatus.textContent = "Надіслано на розгляд. Чекайте рішення адміна.";
-  } catch (err) {
-    console.error(err);
-    saveStatus.hidden = false;
-    saveStatus.classList.add("error");
-    saveStatus.textContent = err?.message || "Не вдалося надіслати";
-  } finally {
-    submitReviewBtn.disabled = false;
-    submitReviewBtn.textContent = "Надіслати на розгляд";
-  }
-});
+saveBtn.addEventListener("click", () => persistQuest({ asDraft: true, asPublish: false }));
+publishQuestBtn?.addEventListener("click", () => persistQuest({ asDraft: false, asPublish: true }));
 
 async function init() {
   if (editId) {
@@ -481,7 +486,6 @@ async function init() {
   fillMetaFields();
   renderStoryPages();
   renderComicScenes();
-  syncSubmitButton();
 }
 
 init().catch((err) => {

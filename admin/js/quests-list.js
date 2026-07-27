@@ -7,27 +7,14 @@ import {
 import {
   getCurrentUser,
   canAccessAdminPanel,
-  ROLES,
 } from "../../shared/js/data/usersData.js";
 
 const listEl = document.getElementById("adminQuestsList");
-const titleEl = document.getElementById("adminQuestsTitle");
-const hintEl = document.getElementById("adminQuestsHint");
-
 const user = getCurrentUser();
+let activeTab = "published";
 
-// Адмін працює з чергою модерації, не з конструктором
 if (canAccessAdminPanel()) {
   window.location.href = "dashboard.html";
-}
-
-if (titleEl) {
-  titleEl.textContent = "Мої квести";
-}
-
-if (hintEl) {
-  hintEl.textContent =
-    "Збережіть чернетку, потім надішліть на розгляд. Після «Погодити» від адміна квест з’явиться в каталозі.";
 }
 
 function statusClass(status) {
@@ -53,14 +40,31 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;");
 }
 
+function isDraftTabStatus(status) {
+  return (
+    status === QUEST_STATUS.DRAFT ||
+    status === QUEST_STATUS.PENDING_REVIEW ||
+    status === QUEST_STATUS.REJECTED ||
+    !status
+  );
+}
+
 async function renderList() {
   if (!listEl) return;
 
   const all = await getQuests();
-  const items = all.filter((q) => !q.authorId || q.authorId === user?.id);
+  const mine = all.filter((q) => !q.authorId || q.authorId === user?.id);
+
+  const items =
+    activeTab === "published"
+      ? mine.filter((q) => q.status === QUEST_STATUS.PUBLISHED)
+      : mine.filter((q) => isDraftTabStatus(q.status));
 
   if (!items.length) {
-    listEl.innerHTML = `<p class="page-placeholder" style="margin: 16px 0 0;">Поки немає квестів. Створіть перший.</p>`;
+    listEl.innerHTML =
+      activeTab === "published"
+        ? `<p class="page-placeholder" style="margin: 16px 0 0;">Немає опублікованих квестів. Опублікуйте з чорнетки — після перевірки адміна вони з’являться тут і в каталозі.</p>`
+        : `<p class="page-placeholder" style="margin: 16px 0 0;">Чорнеток поки немає. Створіть новий квест.</p>`;
     return;
   }
 
@@ -68,12 +72,16 @@ async function renderList() {
     .map((q) => {
       const status = q.status || QUEST_STATUS.DRAFT;
       const label = QUEST_STATUS_LABELS[status] || status;
-      const canSubmit =
-        status === QUEST_STATUS.DRAFT || status === QUEST_STATUS.REJECTED;
+      const canPublish =
+        status === QUEST_STATUS.DRAFT ||
+        status === QUEST_STATUS.REJECTED ||
+        status === QUEST_STATUS.PUBLISHED;
       const note =
         status === QUEST_STATUS.REJECTED && q.reviewNote
           ? `<p class="admin-quest-card__note">${escapeHtml(q.reviewNote)}</p>`
-          : "";
+          : status === QUEST_STATUS.PENDING_REVIEW
+            ? `<p class="admin-quest-card__note" style="color:#8a6d1d">Очікує рішення адміна. З каталогу приховано.</p>`
+            : "";
 
       return `
         <div class="admin-quest-card admin-quest-card--block">
@@ -86,8 +94,8 @@ async function renderList() {
             ${note}
           </a>
           ${
-            canSubmit
-              ? `<button type="button" class="btn-submit-review" data-submit="${q.id}">Надіслати на розгляд</button>`
+            canPublish
+              ? `<button type="button" class="btn-submit-review" data-publish="${q.id}">Опублікувати</button>`
               : ""
           }
         </div>
@@ -96,22 +104,44 @@ async function renderList() {
     .join("");
 }
 
+document.querySelectorAll("[data-kazkar-tab]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    activeTab = btn.dataset.kazkarTab;
+    document.querySelectorAll("[data-kazkar-tab]").forEach((b) => {
+      b.classList.toggle("active", b === btn);
+    });
+    renderList();
+  });
+});
+
 listEl?.addEventListener("click", async (e) => {
-  const btn = e.target.closest("[data-submit]");
+  const btn = e.target.closest("[data-publish]");
   if (!btn) return;
 
-  const id = btn.dataset.submit;
+  const id = btn.dataset.publish;
+  if (
+    !confirm(
+      "Надіслати на перевірку адміну? Квест зникне з каталогу гравців, доки адмін не погодить.",
+    )
+  ) {
+    return;
+  }
+
   btn.disabled = true;
   btn.textContent = "Надсилання…";
 
   try {
     await submitQuestForReview(id);
+    activeTab = "drafts";
+    document.querySelectorAll("[data-kazkar-tab]").forEach((b) => {
+      b.classList.toggle("active", b.dataset.kazkarTab === "drafts");
+    });
     await renderList();
   } catch (err) {
     console.error(err);
-    alert(err?.message || "Не вдалося надіслати на розгляд");
+    alert(err?.message || "Не вдалося опублікувати");
     btn.disabled = false;
-    btn.textContent = "Надіслати на розгляд";
+    btn.textContent = "Опублікувати";
   }
 });
 
