@@ -63,7 +63,7 @@ async function renderList() {
   if (!listEl) return;
 
   const all = await getQuests();
-  const mine = all.filter((q) => !q.authorId || q.authorId === user?.id);
+  const mine = all;
 
   const items =
     activeTab === "published"

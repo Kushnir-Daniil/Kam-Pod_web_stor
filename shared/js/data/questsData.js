@@ -1,9 +1,19 @@
-const DB_NAME = "questy-db";
-const DB_VERSION = 1;
-const STORE = "quests";
-const LEGACY_STORAGE_KEY = "stories";
-const LEGACY_QUESTS_KEY = "quests";
-const STATUS_MIGRATION_FLAG = "questy-status-migrated-v3";
+import {
+  collection,
+  collectionGroup,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  limit,
+  serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+import { auth, db } from "../firebase.js";
 
 /** Статуси квесту (бібліотека казкаря + модерація) */
 export const QUEST_STATUS = Object.freeze({
@@ -23,8 +33,8 @@ export const QUEST_STATUS_LABELS = Object.freeze({
 });
 
 /**
- * Порожній квест під конструктор:
- * історія (сторінки) → комікс (сцени) → гра (кнопка ГРАТИ + Unity build).
+ * Порожній квест під конструктор.
+ * У Firestore: users/{authorId}/quests/{questId}
  */
 export function createEmptyQuest(partial = {}) {
   return {
@@ -57,216 +67,232 @@ export function createEmptyQuest(partial = {}) {
   };
 }
 
-function openDb() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains(STORE)) {
-        db.createObjectStore(STORE, { keyPath: "id", autoIncrement: true });
-      }
-    };
-
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error || new Error("IndexedDB open failed"));
-  });
-}
-
-function txDone(tx) {
-  return new Promise((resolve, reject) => {
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error || new Error("IndexedDB aborted"));
-  });
-}
-
-function migrateLegacyStory(story) {
-  const hasExplicitStatus = Boolean(story.status);
-  const status = hasExplicitStatus ? story.status : QUEST_STATUS.PUBLISHED;
-
-  return createEmptyQuest({
-    id: story.id ?? undefined,
-    title: story.title || "",
-    type: story.type || "",
-    duration: story.duration || "",
-    description: story.description || "",
-    coverImage: story.coverImage || story.image || "",
-    rewards: story.rewards || { xp: 0, coins: 0, crystals: 0 },
-    authorId: story.authorId || null,
-    authorName: story.authorName || "",
-    status,
-    reviewNote: story.reviewNote || "",
-    reviewedBy: story.reviewedBy || null,
-    reviewedAt: story.reviewedAt || null,
-    publishedAt:
-      story.publishedAt ||
-      (status === QUEST_STATUS.PUBLISHED ? new Date().toISOString() : null),
-    story: story.story || { pages: [] },
-    comic: story.comic || { scenes: [] },
-    game: story.game || {
-      buildFolder: "",
-      lockedUntil: "story",
-      geo: null,
-    },
-  });
-}
-
-let migrated = false;
-
-async function migrateFromLocalStorageIfNeeded(db) {
-  if (migrated) return;
-  migrated = true;
-
-  const existing = await new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, "readonly");
-    const req = tx.objectStore(STORE).getAll();
-    req.onsuccess = () => resolve(req.result || []);
-    req.onerror = () => reject(req.error);
-  });
-
-  if (existing.length) return;
-
-  const raw =
-    localStorage.getItem(LEGACY_QUESTS_KEY) ||
-    localStorage.getItem(LEGACY_STORAGE_KEY);
-
-  if (!raw) return;
-
-  const list = JSON.parse(raw).map(migrateLegacyStory);
-  const tx = db.transaction(STORE, "readwrite");
-  const store = tx.objectStore(STORE);
-
-  for (const quest of list) {
-    const copy = { ...quest };
-    if (copy.id == null) delete copy.id;
-    store.put(copy);
+function requireUid() {
+  const uid = auth.currentUser?.uid;
+  if (!uid) {
+    throw new Error("Увійдіть в акаунт, щоб працювати з квестами");
   }
-
-  await txDone(tx);
-  localStorage.removeItem(LEGACY_QUESTS_KEY);
-  localStorage.removeItem(LEGACY_STORAGE_KEY);
+  return uid;
 }
 
-/**
- * Одноразова міграція: лише квести БЕЗ поля status
- * (старий контент до модерації) → published.
- * Не чіпає draft / pending_review — інакше «Зберегти в чорнетку» одразу знову стає published.
- */
-async function migrateLegacyStatusesIfNeeded(db) {
-  if (localStorage.getItem(STATUS_MIGRATION_FLAG) === "1") return;
-
-  const items = await new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, "readonly");
-    const req = tx.objectStore(STORE).getAll();
-    req.onsuccess = () => resolve(req.result || []);
-    req.onerror = () => reject(req.error);
-  });
-
-  const tx = db.transaction(STORE, "readwrite");
-  const store = tx.objectStore(STORE);
-
-  for (const quest of items) {
-    if (quest.status) continue;
-
-    store.put({
-      ...quest,
-      status: QUEST_STATUS.PUBLISHED,
-      publishedAt: quest.publishedAt || new Date().toISOString(),
-      authorName: quest.authorName || "",
+/** Дочекатись Firebase Auth (після оновлення сторінки currentUser спочатку null) */
+export function waitForAuth() {
+  return new Promise((resolve) => {
+    if (auth.currentUser) {
+      resolve(auth.currentUser);
+      return;
+    }
+    const unsub = onAuthStateChanged(auth, (user) => {
+      unsub();
+      resolve(user);
     });
-  }
-
-  await txDone(tx);
-  localStorage.setItem(STATUS_MIGRATION_FLAG, "1");
+  });
 }
 
-async function prepareDb() {
-  const db = await openDb();
-  await migrateFromLocalStorageIfNeeded(db);
-  await migrateLegacyStatusesIfNeeded(db);
-  return db;
+async function ensureAuth() {
+  await waitForAuth();
+}
+
+function questsCol(uid) {
+  return collection(db, "users", uid, "quests");
+}
+
+function questRef(authorId, questId) {
+  return doc(db, "users", authorId, "quests", String(questId));
+}
+
+function mapQuestDoc(snap) {
+  if (!snap?.exists()) return null;
+  const data = snap.data();
+  return createEmptyQuest({
+    ...data,
+    id: data.id || snap.id,
+    authorId: data.authorId || snap.ref.parent.parent.id,
+  });
+}
+
+function toFirestorePayload(quest) {
+  const {
+    id,
+    title,
+    type,
+    duration,
+    description,
+    coverImage,
+    rewards,
+    authorId,
+    authorName,
+    status,
+    reviewNote,
+    reviewedBy,
+    reviewedAt,
+    publishedAt,
+    story,
+    comic,
+    game,
+  } = createEmptyQuest(quest);
+
+  return {
+    id: id || null,
+    title: title || "",
+    type: type || "",
+    duration: duration || "",
+    description: description || "",
+    coverImage: coverImage || "",
+    rewards: rewards || { xp: 0, coins: 0, crystals: 0 },
+    authorId: authorId || null,
+    authorName: authorName || "",
+    status: status || QUEST_STATUS.DRAFT,
+    reviewNote: reviewNote || "",
+    reviewedBy: reviewedBy || null,
+    reviewedAt: reviewedAt || null,
+    publishedAt: publishedAt || null,
+    story: story || { pages: [] },
+    comic: comic || { scenes: [] },
+    game: game || { buildFolder: "", lockedUntil: "story", geo: null },
+  };
+}
+
+function mapFirestoreError(error) {
+  const code = error?.code || "";
+  if (code === "permission-denied") {
+    return "Немає доступу до Firestore. Перевірте Rules і роль акаунта.";
+  }
+  if (code === "invalid-argument" || /exceeds|too large|larger than/i.test(error?.message || "")) {
+    return "Квест завеликий для збереження (ліміт ~1 МБ). Зменшіть картинки або кількість сторінок.";
+  }
+  if (code === "failed-precondition") {
+    return "Потрібен індекс Firestore (Collection group: quests → status). Створіть його в Console за посиланням з помилки.";
+  }
+  return error?.message || "Помилка збереження квесту";
 }
 
 export function isPublished(quest) {
   return quest?.status === QUEST_STATUS.PUBLISHED;
 }
 
-export async function getQuests() {
-  const db = await prepareDb();
+/** Квести поточного казкаря: users/{uid}/quests */
+export async function getQuests(authorId = null) {
+  await ensureAuth();
+  const uid = authorId || auth.currentUser?.uid;
+  if (!uid) return [];
 
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, "readonly");
-    const req = tx.objectStore(STORE).getAll();
-    req.onsuccess = () => {
-      const items = (req.result || []).sort((a, b) => a.id - b.id);
-      resolve(items);
-    };
-    req.onerror = () => reject(req.error);
-  });
+  const snap = await getDocs(questsCol(uid));
+  return snap.docs
+    .map(mapQuestDoc)
+    .filter(Boolean)
+    .sort((a, b) => String(a.title).localeCompare(String(b.title), "uk"));
 }
 
+/** Усі опубліковані квести (будь-який казкар) */
 export async function getPublishedQuests() {
-  const all = await getQuests();
-  return all.filter(isPublished);
+  await ensureAuth();
+  const q = query(
+    collectionGroup(db, "quests"),
+    where("status", "==", QUEST_STATUS.PUBLISHED),
+  );
+  const snap = await getDocs(q);
+  return snap.docs
+    .map(mapQuestDoc)
+    .filter(Boolean)
+    .sort((a, b) => String(a.title).localeCompare(String(b.title), "uk"));
 }
 
+/** Черга модерації */
 export async function getPendingReviewQuests() {
-  const all = await getQuests();
-  return all.filter((q) => q.status === QUEST_STATUS.PENDING_REVIEW);
+  await ensureAuth();
+  const q = query(
+    collectionGroup(db, "quests"),
+    where("status", "==", QUEST_STATUS.PENDING_REVIEW),
+  );
+  const snap = await getDocs(q);
+  return snap.docs
+    .map(mapQuestDoc)
+    .filter(Boolean)
+    .sort((a, b) => String(a.authorName).localeCompare(String(b.authorName), "uk"));
 }
 
-export async function getQuestById(id) {
-  const numericId = Number(id);
-  if (!numericId) return null;
+/**
+ * Знайти квест за id.
+ * Спочатку в акаунті автора (якщо відомий), інакше collection group по полю id.
+ */
+export async function getQuestById(id, authorId = null) {
+  await ensureAuth();
+  const questId = String(id || "");
+  if (!questId) return null;
 
-  const db = await prepareDb();
+  if (authorId) {
+    const snap = await getDoc(questRef(authorId, questId));
+    return mapQuestDoc(snap);
+  }
 
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, "readonly");
-    const req = tx.objectStore(STORE).get(numericId);
-    req.onsuccess = () => resolve(req.result || null);
-    req.onerror = () => reject(req.error);
-  });
+  const me = auth.currentUser?.uid;
+  if (me) {
+    const own = await getDoc(questRef(me, questId));
+    if (own.exists()) return mapQuestDoc(own);
+  }
+
+  const q = query(
+    collectionGroup(db, "quests"),
+    where("id", "==", questId),
+    limit(1),
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  return mapQuestDoc(snap.docs[0]);
 }
 
 export async function addQuest(partial = {}) {
-  const db = await prepareDb();
+  try {
+    await ensureAuth();
+    const uid = requireUid();
+    const ref = doc(questsCol(uid));
+    const payload = toFirestorePayload({
+      ...partial,
+      id: ref.id,
+      authorId: partial.authorId || uid,
+      status: partial.status || QUEST_STATUS.DRAFT,
+      publishedAt: null,
+    });
 
-  const quest = createEmptyQuest(partial);
-  delete quest.id;
+    await setDoc(ref, {
+      ...payload,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
 
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, "readwrite");
-    const req = tx.objectStore(STORE).add(quest);
-    req.onsuccess = () => {
-      resolve({ ...quest, id: req.result });
-    };
-    req.onerror = () => reject(req.error);
-  });
+    return createEmptyQuest(payload);
+  } catch (error) {
+    throw new Error(mapFirestoreError(error));
+  }
 }
 
-export async function updateQuest(id, patch) {
-  const db = await prepareDb();
-  const current = await getQuestById(id);
-  if (!current) return null;
+export async function updateQuest(id, patch = {}) {
+  try {
+    await ensureAuth();
+    const current = await getQuestById(id, patch.authorId || null);
+    if (!current) return null;
 
-  const next = {
-    ...current,
-    ...patch,
-    id: current.id,
-  };
+    const authorId = current.authorId || requireUid();
+    const next = toFirestorePayload({
+      ...current,
+      ...patch,
+      id: current.id,
+      authorId,
+    });
 
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, "readwrite");
-    const req = tx.objectStore(STORE).put(next);
-    req.onsuccess = () => resolve(next);
-    req.onerror = () => reject(req.error);
-  });
+    await updateDoc(questRef(authorId, current.id), {
+      ...next,
+      updatedAt: serverTimestamp(),
+    });
+
+    return createEmptyQuest(next);
+  } catch (error) {
+    throw new Error(mapFirestoreError(error));
+  }
 }
 
 export async function submitQuestForReview(id) {
-  // Кожна «публікація» знову йде на модерацію і зникає з каталогу гравців
   return updateQuest(id, {
     status: QUEST_STATUS.PENDING_REVIEW,
     publishedAt: null,
@@ -277,7 +303,7 @@ export async function submitQuestForReview(id) {
 }
 
 export async function saveQuestAsDraft(id, patch = {}) {
-  const { status: _ignored, publishedAt: _p, ...rest } = patch;
+  const { status: _s, publishedAt: _p, ...rest } = patch;
   return updateQuest(id, {
     ...rest,
     status: QUEST_STATUS.DRAFT,
@@ -302,6 +328,13 @@ export async function rejectQuest(id, reviewerId = null, note = "") {
     reviewedAt: new Date().toISOString(),
     reviewNote: note || "Відхилено модератором",
   });
+}
+
+export async function deleteQuest(id, authorId = null) {
+  const current = await getQuestById(id, authorId);
+  if (!current?.authorId) return false;
+  await deleteDoc(questRef(current.authorId, current.id));
+  return true;
 }
 
 /** @deprecated */

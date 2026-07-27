@@ -50,7 +50,6 @@ service cloud.firestore {
           || (request.resource.data.role == 'admin' && isAdminEmail())
         );
 
-      // Власник: без ескалації ролі / саморозблокування
       allow update: if signedIn()
         && request.auth.uid == userId
         && request.resource.data.role == roleOf(resource.data)
@@ -58,6 +57,41 @@ service cloud.firestore {
         && request.resource.data.get('isAdmin', false) == (roleOf(resource.data) == 'admin');
 
       allow update, delete: if isAdmin();
+
+      // Квести казкаря: users/{uid}/quests/{questId}
+      match /quests/{questId} {
+        allow read: if signedIn() && (
+          resource.data.status == 'published'
+          || request.auth.uid == userId
+          || isAdmin()
+        );
+
+        allow create: if isKazkar()
+          && isActive()
+          && request.auth.uid == userId
+          && request.resource.data.authorId == userId
+          && request.resource.data.id == questId
+          && request.resource.data.status in ['draft', 'pending_review'];
+
+        // Казкар: чернетка / на розгляд / відхилено / зняти з публікації в pending|draft
+        allow update: if isKazkar()
+          && isActive()
+          && request.auth.uid == userId
+          && request.resource.data.authorId == userId
+          && request.resource.data.id == resource.data.id
+          && request.resource.data.status in ['draft', 'pending_review', 'rejected', 'archived']
+          && request.resource.data.status != 'published';
+
+        // Адмін: погодити / відхилити / будь-яка правка статусу
+        allow update: if isAdmin();
+
+        allow delete: if isAdmin()
+          || (
+            isKazkar()
+            && request.auth.uid == userId
+            && resource.data.status == 'draft'
+          );
+      }
     }
 
     // ----- invite codes (казкар) -----
@@ -71,32 +105,6 @@ service cloud.firestore {
         && request.resource.data.usedCount == resource.data.usedCount + 1;
 
       allow create, delete: if isAdmin();
-    }
-
-    // ----- quests (коли перенесете з IndexedDB у Firestore) -----
-    match /quests/{questId} {
-      allow read: if signedIn() && (
-        resource.data.status == 'published'
-        || isAdmin()
-        || (isKazkar() && resource.data.authorId == request.auth.uid)
-      );
-
-      allow create: if isKazkar()
-        && isActive()
-        && request.resource.data.authorId == request.auth.uid
-        && request.resource.data.status in ['draft', 'pending_review'];
-
-      allow update: if isAdmin()
-        || (
-          isKazkar()
-          && isActive()
-          && resource.data.authorId == request.auth.uid
-          && request.resource.data.authorId == resource.data.authorId
-          && request.resource.data.status in ['draft', 'pending_review', 'archived']
-        );
-
-      allow delete: if isAdmin()
-        || (isKazkar() && resource.data.authorId == request.auth.uid && resource.data.status == 'draft');
     }
   }
 }
