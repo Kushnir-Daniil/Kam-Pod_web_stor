@@ -230,3 +230,98 @@
   background: #e8e8e8;
   color: #666;
 }
+
+.admin-quest-card--block {
+  gap: 10px;
+}
+
+.admin-quest-card__link {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.admin-quest-card__note {
+  font-size: 12px;
+  color: #a33b32;
+  margin: 0;
+}
+
+.btn-submit-review {
+  width: 100%;
+  border: none;
+  border-radius: 30px;
+  padding: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #3d6b8a;
+  color: #fff;
+}
+
+.btn-submit-review:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.moderation-queue {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.moderation-group__title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.moderation-group__hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin: 0 0 12px;
+}
+
+.moderation-group .quest-status {
+  display: inline-block;
+  margin-top: 8px;
+}
+
+.review-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 20px;
+  position: sticky;
+  bottom: 80px;
+  z-index: 5;
+}
+
+.btn-approve,
+.btn-reject {
+  border: none;
+  border-radius: 30px;
+  padding: 14px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+}
+
+.btn-approve {
+  background: #3d8f5f;
+}
+
+.btn-reject {
+  background: #c0392b;
+}
+
+.btn-approve:disabled,
+.btn-reject:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

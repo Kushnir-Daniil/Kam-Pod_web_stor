@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Адмін — Головна</title>
+  <title>Адмін — Модерація</title>
   <link rel="stylesheet" href="../user/css/user.css">
   <link rel="stylesheet" href="../user/css/quests.css">
   <link rel="stylesheet" href="css/admin.css">
@@ -11,18 +11,22 @@
 <body>
 
     <div class="page-container">
-        <p class="page-placeholder">Адмін-панель</p>
-        <a href="quests.html" class="btn-logout" style="text-align: center; text-decoration: none; margin-top: 24px;">
-            Квести / конструктор
-        </a>
-        <p class="page-placeholder" style="margin-top: 20px; font-size: 13px;">
-            Далі тут: черга квестів «на розгляді», публікація / відхилення, блокування користувачів.
-        </p>
+        <div class="page-header">
+            <div>
+                <h1>Адмін-панель</h1>
+                <p>Квести казкарів на розгляді</p>
+            </div>
+        </div>
+
+        <div id="moderationQueue" class="moderation-queue">
+            <p class="page-placeholder">Завантаження…</p>
+        </div>
     </div>
 
     <div id="nav-placeholder"></div>
 
     <script type="module" src="../shared/js/nav.js"></script>
     <script type="module" src="js/admin.js"></script>
+    <script type="module" src="js/moderation.js"></script>
 </body>
 </html>

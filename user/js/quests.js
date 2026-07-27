@@ -1,4 +1,4 @@
-import { getQuests } from "../../shared/js/data/questsData.js";
+import { getPublishedQuests } from "../../shared/js/data/questsData.js";
 
 function resolveImage(src) {
   if (!src) return "../img/tower.png";
@@ -19,10 +19,11 @@ async function renderQuests(filterText = "") {
   const list = document.getElementById("questList");
   if (!list) return;
 
-  const all = await getQuests();
-  const quests = all.filter((q) =>
-    (q.title || "").toLowerCase().includes(filterText.toLowerCase()) ||
-    (q.type || "").toLowerCase().includes(filterText.toLowerCase()),
+  const all = await getPublishedQuests();
+  const quests = all.filter(
+    (q) =>
+      (q.title || "").toLowerCase().includes(filterText.toLowerCase()) ||
+      (q.type || "").toLowerCase().includes(filterText.toLowerCase()),
   );
 
   if (quests.length === 0) {
@@ -30,10 +31,11 @@ async function renderQuests(filterText = "") {
     return;
   }
 
-  list.innerHTML = quests.map((quest) => {
-    const cover = resolveImage(quest.coverImage || quest.image);
-    const href = `quest.html?id=${quest.id}`;
-    return `
+  list.innerHTML = quests
+    .map((quest) => {
+      const cover = resolveImage(quest.coverImage || quest.image);
+      const href = `quest.html?id=${quest.id}`;
+      return `
       <a href="${href}" class="quest-card-link">
         <div class="quest-card">
           <img src="${cover}" alt="${quest.title}">
@@ -50,7 +52,8 @@ async function renderQuests(filterText = "") {
         </div>
       </a>
     `;
-  }).join("");
+    })
+    .join("");
 }
 
 const searchInput = document.getElementById("questSearch");
