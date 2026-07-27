@@ -90,7 +90,43 @@ export function waitForAuth() {
 }
 
 async function ensureAuth() {
-  await waitForAuth();
+  const user = await waitForAuth();
+  if (!user) {
+    throw new Error("Сесія не активна. Увійдіть знову.");
+  }
+  return user;
+}
+
+function moderationRef(questId) {
+  return doc(db, "moderationQueue", String(questId));
+}
+
+/**
+ * Окрема черга для адміна (працює між браузерами без collection group index).
+ * Повний квест лишається в users/{uid}/quests/{id}.
+ */
+async function syncModerationQueue(quest) {
+  if (!quest?.id || !quest?.authorId) return;
+
+  const ref = moderationRef(quest.id);
+  if (quest.status === QUEST_STATUS.PENDING_REVIEW) {
+    const cover = quest.coverImage || "";
+    await setDoc(ref, {
+      questId: quest.id,
+      authorId: quest.authorId,
+      authorName: quest.authorName || "",
+      title: quest.title || "",
+      type: quest.type || "",
+      duration: quest.duration || "",
+      description: quest.description || "",
+      // обкладинка може бути величезним data URL — у чергу кладемо лише короткі URL
+      coverImage: cover.startsWith("data:") ? "" : cover,
+      status: QUEST_STATUS.PENDING_REVIEW,
+      submittedAt: serverTimestamp(),
+    });
+  } else {
+    await deleteDoc(ref).catch(() => {});
+  }
 }
 
 function questsCol(uid) {
@@ -198,18 +234,30 @@ export async function getPublishedQuests() {
     .sort((a, b) => String(a.title).localeCompare(String(b.title), "uk"));
 }
 
-/** Черга модерації */
+/** Черга модерації (між браузерами) */
 export async function getPendingReviewQuests() {
   await ensureAuth();
-  const q = query(
-    collectionGroup(db, "quests"),
-    where("status", "==", QUEST_STATUS.PENDING_REVIEW),
-  );
-  const snap = await getDocs(q);
-  return snap.docs
-    .map(mapQuestDoc)
-    .filter(Boolean)
-    .sort((a, b) => String(a.authorName).localeCompare(String(b.authorName), "uk"));
+  try {
+    const snap = await getDocs(collection(db, "moderationQueue"));
+    return snap.docs
+      .map((d) => {
+        const data = d.data();
+        return createEmptyQuest({
+          id: data.questId || d.id,
+          authorId: data.authorId || null,
+          authorName: data.authorName || "",
+          title: data.title || "",
+          type: data.type || "",
+          duration: data.duration || "",
+          description: data.description || "",
+          coverImage: data.coverImage || "",
+          status: QUEST_STATUS.PENDING_REVIEW,
+        });
+      })
+      .sort((a, b) => String(a.authorName).localeCompare(String(b.authorName), "uk"));
+  } catch (error) {
+    throw new Error(mapFirestoreError(error));
+  }
 }
 
 /**
@@ -261,7 +309,9 @@ export async function addQuest(partial = {}) {
       updatedAt: serverTimestamp(),
     });
 
-    return createEmptyQuest(payload);
+    const created = createEmptyQuest(payload);
+    await syncModerationQueue(created);
+    return created;
   } catch (error) {
     throw new Error(mapFirestoreError(error));
   }
@@ -286,7 +336,9 @@ export async function updateQuest(id, patch = {}) {
       updatedAt: serverTimestamp(),
     });
 
-    return createEmptyQuest(next);
+    const saved = createEmptyQuest(next);
+    await syncModerationQueue(saved);
+    return saved;
   } catch (error) {
     throw new Error(mapFirestoreError(error));
   }
@@ -334,6 +386,7 @@ export async function deleteQuest(id, authorId = null) {
   const current = await getQuestById(id, authorId);
   if (!current?.authorId) return false;
   await deleteDoc(questRef(current.authorId, current.id));
+  await deleteDoc(moderationRef(current.id)).catch(() => {});
   return true;
 }
 

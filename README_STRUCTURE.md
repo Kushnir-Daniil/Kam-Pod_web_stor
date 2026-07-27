@@ -107,7 +107,8 @@
 | `status` | `draft` \| `pending_review` \| `rejected` \| `published` \| `archived` |
 | `title`, `story`, `comic`, `game`, … | контент квесту |
 
-Каталог гравців і черга адміна читають **collection group** `quests` (фільтр по `status`).
+Каталог гравців читає **collection group** `quests` (фільтр `status == published`).  
+Черга адміна читає окрему колекцію `moderationQueue/{questId}` (щоб працювало між браузерами).
 
 Колекція `inviteCodes/{CODE}` (код у UPPERCASE):
 

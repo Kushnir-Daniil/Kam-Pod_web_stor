@@ -94,6 +94,20 @@ service cloud.firestore {
       }
     }
 
+    // Черга модерації (щоб адмін бачив квести з інших браузерів без collection group)
+    match /moderationQueue/{questId} {
+      allow read: if isAdmin();
+
+      allow create, update: if isKazkar()
+        && isActive()
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.status == 'pending_review'
+        && request.resource.data.questId == questId;
+
+      allow delete: if isAdmin()
+        || (isKazkar() && resource.data.authorId == request.auth.uid);
+    }
+
     // ----- invite codes (казкар) -----
     match /inviteCodes/{code} {
       allow read: if signedIn();
