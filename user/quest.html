@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Квест</title>
+  <link rel="stylesheet" href="css/user.css">
+  <link rel="stylesheet" href="css/quests.css">
+</head>
+<body>
+
+    <div class="page-container">
+        <header class="quest-player-header">
+            <a href="quests.html" class="quest-back" aria-label="Назад">←</a>
+            <div class="quest-player-heading">
+                <p class="quest-player-step" id="questStepLabel">Квест</p>
+                <h1 id="questTitle">Завантаження…</h1>
+            </div>
+        </header>
+
+        <div class="quest-mode-tabs" role="tablist">
+            <button type="button" class="quest-mode-tab active" data-mode="story">Історія</button>
+            <button type="button" class="quest-mode-tab" data-mode="comic">Комікс</button>
+            <button type="button" class="quest-mode-tab" data-mode="game">Гра</button>
+        </div>
+
+        <section id="questModePanel" class="quest-mode-panel">
+            <p class="page-placeholder">Оберіть квест зі списку або дочекайтесь завантаження.</p>
+        </section>
+    </div>
+
+    <div id="nav-placeholder"></div>
+
+    <script type="module" src="../shared/js/nav.js"></script>
+    <script type="module" src="js/quest-player.js"></script>
+</body>
+</html>

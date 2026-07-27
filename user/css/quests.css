@@ -214,3 +214,156 @@
   height: 100%;
   background: var(--color-primary);
 }
+
+/* ===== Картка як посилання ===== */
+.quest-card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ===== Плеєр квесту (Історія / Комікс / Гра) ===== */
+.quest-player-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.quest-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.quest-player-heading h1 {
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.quest-player-step {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.quest-mode-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.quest-mode-tab {
+  border: none;
+  background: var(--color-card-bg);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.quest-mode-tab.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.quest-mode-panel {
+  min-height: 180px;
+}
+
+.quest-game-cta {
+  text-align: center;
+  padding: 40px 16px;
+  background: var(--color-card-bg);
+  border-radius: 16px;
+  border: 1px solid var(--color-border);
+}
+
+.quest-game-cta__title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 20px;
+}
+
+.story-page h2 {
+  font-size: 18px;
+  margin: 12px 0 8px;
+}
+
+.story-page__img {
+  width: 100%;
+  border-radius: 16px;
+  display: block;
+  margin-bottom: 12px;
+  object-fit: cover;
+  max-height: 260px;
+}
+
+.story-page__text {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--color-text);
+  white-space: pre-wrap;
+}
+
+.story-page__quote {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(240, 147, 56, 0.12);
+  color: var(--color-primary-dark);
+  font-style: italic;
+}
+
+.story-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.comic-dialogues {
+  background: rgba(0, 0, 0, 0.78);
+  color: #fff;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.comic-dialogues p + p {
+  margin-top: 8px;
+}
+
+.btn-secondary-editor {
+  border: 1px solid var(--color-border);
+  background: var(--color-card-bg);
+  color: var(--color-text);
+  border-radius: 12px;
+  padding: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-secondary-editor:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

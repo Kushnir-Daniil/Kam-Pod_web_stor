@@ -1,4 +1,4 @@
-import { registerUser, loginUser, setCurrentUser } from "../../user/js/data/usersData.js";
+import { registerUser, loginUser, setCurrentUser } from "../../shared/js/data/usersData.js";
 
 // ===== Показати/приховати пароль =====
 function setupPasswordToggle(toggleBtnId, inputId) {
@@ -18,11 +18,19 @@ setupPasswordToggle("togglePassword", "password");
 setupPasswordToggle("togglePasswordConfirm", "passwordConfirm");
 setupPasswordToggle("toggleLoginPassword", "loginPassword");
 
+function setSubmitting(form, isSubmitting) {
+  const button = form.querySelector('button[type="submit"]');
+  if (!button) return;
+  button.disabled = isSubmitting;
+  button.dataset.originalText ??= button.textContent;
+  button.textContent = isSubmitting ? "Зачекайте…" : button.dataset.originalText;
+}
+
 // ===== Обробка сабміту форми реєстрації =====
 const registerForm = document.getElementById("registerForm");
 
 if (registerForm) {
-  registerForm.addEventListener("submit", (e) => {
+  registerForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const name = document.querySelector("#registerForm input[type='text']").value;
@@ -36,7 +44,9 @@ if (registerForm) {
       return;
     }
 
-    const result = registerUser({ name, email, password, birthDate });
+    setSubmitting(registerForm, true);
+    const result = await registerUser({ name, email, password, birthDate });
+    setSubmitting(registerForm, false);
 
     if (!result.success) {
       alert(result.error);
@@ -52,13 +62,15 @@ if (registerForm) {
 const loginForm = document.getElementById("loginForm");
 
 if (loginForm) {
-  loginForm.addEventListener("submit", (e) => {
+  loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const email = document.querySelector("#loginForm input[type='email']").value;
     const password = document.getElementById("loginPassword").value;
 
-    const result = loginUser(email, password);
+    setSubmitting(loginForm, true);
+    const result = await loginUser(email, password);
+    setSubmitting(loginForm, false);
 
     if (!result.success) {
       alert(result.error);
