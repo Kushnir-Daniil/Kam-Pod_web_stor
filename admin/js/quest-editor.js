@@ -3,7 +3,9 @@ import {
   getQuestById,
   updateQuest,
   createEmptyQuest,
+  QUEST_STATUS,
 } from "../../shared/js/data/questsData.js";
+import { getCurrentUser } from "../../shared/js/data/usersData.js";
 
 const params = new URLSearchParams(window.location.search);
 const editId = params.get("id");
@@ -357,12 +359,20 @@ saveBtn.addEventListener("click", async () => {
     return;
   }
 
+  const currentUser = getCurrentUser();
+
   const payload = {
     title,
     type: metaType.value.trim(),
     duration: metaDuration.value.trim(),
     description: metaDescription.value.trim(),
     coverImage: draft.coverImage || "",
+    authorId: draft.authorId || currentUser?.id || null,
+    status: draft.status || QUEST_STATUS.DRAFT,
+    reviewNote: draft.reviewNote || "",
+    reviewedBy: draft.reviewedBy || null,
+    reviewedAt: draft.reviewedAt || null,
+    publishedAt: draft.publishedAt || null,
     rewards: {
       xp: Number(metaXp.value) || 0,
       coins: Number(metaCoins.value) || 0,
