@@ -3,7 +3,7 @@ const DB_VERSION = 1;
 const STORE = "quests";
 const LEGACY_STORAGE_KEY = "stories";
 const LEGACY_QUESTS_KEY = "quests";
-const STATUS_MIGRATION_FLAG = "questy-status-migrated-v2";
+const STATUS_MIGRATION_FLAG = "questy-status-migrated-v3";
 
 /** Статуси квесту (бібліотека казкаря + модерація) */
 export const QUEST_STATUS = Object.freeze({
@@ -149,9 +149,9 @@ async function migrateFromLocalStorageIfNeeded(db) {
 }
 
 /**
- * Одноразова міграція: увесь наявний контент до модерації
- * (draft / без статусу) вважаємо вже опублікованим.
- * Нові квести казкарів після цього лишаються draft, доки не пройдуть розгляд.
+ * Одноразова міграція: лише квести БЕЗ поля status
+ * (старий контент до модерації) → published.
+ * Не чіпає draft / pending_review — інакше «Зберегти в чорнетку» одразу знову стає published.
  */
 async function migrateLegacyStatusesIfNeeded(db) {
   if (localStorage.getItem(STATUS_MIGRATION_FLAG) === "1") return;
@@ -167,14 +167,7 @@ async function migrateLegacyStatusesIfNeeded(db) {
   const store = tx.objectStore(STORE);
 
   for (const quest of items) {
-    if (
-      quest.status === QUEST_STATUS.PUBLISHED ||
-      quest.status === QUEST_STATUS.PENDING_REVIEW ||
-      quest.status === QUEST_STATUS.REJECTED ||
-      quest.status === QUEST_STATUS.ARCHIVED
-    ) {
-      continue;
-    }
+    if (quest.status) continue;
 
     store.put({
       ...quest,
@@ -284,8 +277,9 @@ export async function submitQuestForReview(id) {
 }
 
 export async function saveQuestAsDraft(id, patch = {}) {
+  const { status: _ignored, publishedAt: _p, ...rest } = patch;
   return updateQuest(id, {
-    ...patch,
+    ...rest,
     status: QUEST_STATUS.DRAFT,
     publishedAt: null,
   });
