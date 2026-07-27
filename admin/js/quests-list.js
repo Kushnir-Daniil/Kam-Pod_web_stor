@@ -10,11 +10,12 @@ import {
 } from "../../shared/js/data/usersData.js";
 
 const listEl = document.getElementById("adminQuestsList");
+const tabsRow = document.querySelector(".kazkar-tabs");
 const user = getCurrentUser();
 let activeTab = "published";
 
 if (canAccessAdminPanel()) {
-  window.location.href = "dashboard.html";
+  window.location.replace("dashboard.html");
 }
 
 function statusClass(status) {
@@ -42,11 +43,20 @@ function escapeHtml(value) {
 
 function isDraftTabStatus(status) {
   return (
+    !status ||
     status === QUEST_STATUS.DRAFT ||
     status === QUEST_STATUS.PENDING_REVIEW ||
-    status === QUEST_STATUS.REJECTED ||
-    !status
+    status === QUEST_STATUS.REJECTED
   );
+}
+
+function setActiveTab(tab) {
+  activeTab = tab === "drafts" ? "drafts" : "published";
+  document.querySelectorAll("[data-kazkar-tab]").forEach((btn) => {
+    const on = btn.getAttribute("data-kazkar-tab") === activeTab;
+    btn.classList.toggle("active", on);
+    btn.setAttribute("aria-selected", on ? "true" : "false");
+  });
 }
 
 async function renderList() {
@@ -63,8 +73,8 @@ async function renderList() {
   if (!items.length) {
     listEl.innerHTML =
       activeTab === "published"
-        ? `<p class="page-placeholder" style="margin: 16px 0 0;">Немає опублікованих квестів. Опублікуйте з чорнетки — після перевірки адміна вони з’являться тут і в каталозі.</p>`
-        : `<p class="page-placeholder" style="margin: 16px 0 0;">Чорнеток поки немає. Створіть новий квест.</p>`;
+        ? `<p class="page-placeholder" style="margin: 16px 0 0;">Немає опублікованих квестів. Натисніть «Опублікувати» в чорнетці — після перевірки адміна вони з’являться тут.</p>`
+        : `<p class="page-placeholder" style="margin: 16px 0 0;">Чорнеток поки немає. Створіть новий квест або збережіть опублікований у чорнетку.</p>`;
     return;
   }
 
@@ -72,10 +82,7 @@ async function renderList() {
     .map((q) => {
       const status = q.status || QUEST_STATUS.DRAFT;
       const label = QUEST_STATUS_LABELS[status] || status;
-      const canPublish =
-        status === QUEST_STATUS.DRAFT ||
-        status === QUEST_STATUS.REJECTED ||
-        status === QUEST_STATUS.PUBLISHED;
+      const canPublish = status !== QUEST_STATUS.PENDING_REVIEW;
       const note =
         status === QUEST_STATUS.REJECTED && q.reviewNote
           ? `<p class="admin-quest-card__note">${escapeHtml(q.reviewNote)}</p>`
@@ -104,19 +111,21 @@ async function renderList() {
     .join("");
 }
 
-document.querySelectorAll("[data-kazkar-tab]").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    activeTab = btn.dataset.kazkarTab;
-    document.querySelectorAll("[data-kazkar-tab]").forEach((b) => {
-      b.classList.toggle("active", b === btn);
-    });
-    renderList();
+if (tabsRow) {
+  tabsRow.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-kazkar-tab]");
+    if (!btn || !tabsRow.contains(btn)) return;
+    e.preventDefault();
+    setActiveTab(btn.getAttribute("data-kazkar-tab"));
+    renderList().catch(console.error);
   });
-});
+}
 
 listEl?.addEventListener("click", async (e) => {
   const btn = e.target.closest("[data-publish]");
   if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
 
   const id = btn.dataset.publish;
   if (
@@ -132,10 +141,7 @@ listEl?.addEventListener("click", async (e) => {
 
   try {
     await submitQuestForReview(id);
-    activeTab = "drafts";
-    document.querySelectorAll("[data-kazkar-tab]").forEach((b) => {
-      b.classList.toggle("active", b.dataset.kazkarTab === "drafts");
-    });
+    setActiveTab("drafts");
     await renderList();
   } catch (err) {
     console.error(err);
@@ -145,6 +151,7 @@ listEl?.addEventListener("click", async (e) => {
   }
 });
 
+setActiveTab("published");
 renderList().catch((err) => {
   console.error(err);
   if (listEl) {

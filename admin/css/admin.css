@@ -136,6 +136,12 @@
 
 .editor-actions {
   margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 24px;
+  position: relative;
+  z-index: 2;
 }
 
 .editor-status {
@@ -269,6 +275,16 @@
 
 .kazkar-tabs {
   margin: 12px 0 4px;
+  position: relative;
+  z-index: 2;
+}
+
+.kazkar-tabs .tab-btn {
+  position: relative;
+  z-index: 2;
+  min-height: 40px;
+  font-size: 13px;
+  pointer-events: auto;
 }
   display: flex;
   flex-direction: column;

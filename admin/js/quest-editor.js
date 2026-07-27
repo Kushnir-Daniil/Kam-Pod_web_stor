@@ -4,8 +4,6 @@ import {
   updateQuest,
   createEmptyQuest,
   QUEST_STATUS,
-  QUEST_STATUS_LABELS,
-  submitQuestForReview,
   saveQuestAsDraft,
 } from "../../shared/js/data/questsData.js";
 import { getCurrentUser } from "../../shared/js/data/usersData.js";
@@ -212,9 +210,6 @@ async function persistQuest({ asDraft, asPublish }) {
   }
 
   const currentUser = getCurrentUser();
-  const targetStatus = asPublish
-    ? QUEST_STATUS.PENDING_REVIEW
-    : QUEST_STATUS.DRAFT;
 
   if (asPublish) {
     const ok = confirm(
@@ -230,50 +225,65 @@ async function persistQuest({ asDraft, asPublish }) {
     if (!ok) return;
   }
 
+  const targetStatus = asPublish
+    ? QUEST_STATUS.PENDING_REVIEW
+    : QUEST_STATUS.DRAFT;
   const payload = buildPayload(currentUser, targetStatus);
+
   saveBtn.disabled = true;
   if (publishQuestBtn) publishQuestBtn.disabled = true;
   saveBtn.textContent = "Збереження…";
   if (publishQuestBtn && asPublish) publishQuestBtn.textContent = "Публікація…";
 
   try {
+    let saved;
     if (draft.id) {
-      const updated = asDraft
-        ? await saveQuestAsDraft(draft.id, payload)
-        : await updateQuest(draft.id, {
-            ...payload,
-            status: QUEST_STATUS.PENDING_REVIEW,
-            publishedAt: null,
-            reviewNote: "",
-            reviewedBy: null,
-            reviewedAt: null,
-          });
-      Object.assign(draft, updated);
-    } else {
-      const created = await addQuest(payload);
-      Object.assign(draft, created);
-      history.replaceState(null, "", `quest-editor.html?id=${created.id}`);
-      document.getElementById("editorTitle").textContent = "Редагування квесту";
-
-      if (asPublish) {
-        const updated = await submitQuestForReview(created.id);
-        Object.assign(draft, updated);
+      if (asDraft) {
+        saved = await saveQuestAsDraft(draft.id, payload);
+      } else {
+        saved = await updateQuest(draft.id, {
+          ...payload,
+          status: QUEST_STATUS.PENDING_REVIEW,
+          publishedAt: null,
+          reviewNote: "",
+          reviewedBy: null,
+          reviewedAt: null,
+        });
       }
+    } else {
+      saved = await addQuest({
+        ...payload,
+        status: targetStatus,
+        publishedAt: null,
+      });
+      history.replaceState(null, "", `quest-editor.html?id=${saved.id}`);
+      document.getElementById("editorTitle").textContent = "Редагування квесту";
+    }
+
+    Object.assign(draft, saved);
+
+    if (draft.status !== targetStatus) {
+      saved = await updateQuest(draft.id, {
+        status: targetStatus,
+        publishedAt: null,
+      });
+      Object.assign(draft, saved);
     }
 
     saveStatus.hidden = false;
     saveStatus.classList.remove("error");
     if (asPublish) {
       saveStatus.textContent =
-        "Надіслано на перевірку. Квест знято з каталогу, доки адмін не погодить.";
+        "Надіслано на перевірку (статус: На розгляді). Квест знято з каталогу.";
     } else {
-      saveStatus.textContent = `Збережено в чорнетці (${QUEST_STATUS_LABELS[QUEST_STATUS.DRAFT]}).`;
+      saveStatus.textContent = "Збережено в чорнетці (статус: У чорнетці).";
     }
   } catch (err) {
     console.error(err);
     saveStatus.hidden = false;
     saveStatus.classList.add("error");
     saveStatus.textContent = err?.message || "Помилка збереження";
+    alert(err?.message || "Помилка збереження квесту");
   } finally {
     saveBtn.disabled = false;
     if (publishQuestBtn) publishQuestBtn.disabled = false;
@@ -463,8 +473,21 @@ comicScenesEl.addEventListener("input", (e) => {
   }
 });
 
-saveBtn.addEventListener("click", () => persistQuest({ asDraft: true, asPublish: false }));
-publishQuestBtn?.addEventListener("click", () => persistQuest({ asDraft: false, asPublish: true }));
+if (saveBtn) {
+  saveBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    persistQuest({ asDraft: true, asPublish: false });
+  });
+}
+
+if (publishQuestBtn) {
+  publishQuestBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    persistQuest({ asDraft: false, asPublish: true });
+  });
+} else {
+  console.error("Кнопку «Опублікувати» не знайдено в DOM");
+}
 
 async function init() {
   if (editId) {
