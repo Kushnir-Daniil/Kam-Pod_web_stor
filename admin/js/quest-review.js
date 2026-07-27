@@ -12,6 +12,7 @@ import {
 
 const params = new URLSearchParams(window.location.search);
 const questId = params.get("id");
+const authorId = params.get("author") || null;
 
 const titleEl = document.getElementById("reviewTitle");
 const metaEl = document.getElementById("reviewMeta");
@@ -215,7 +216,7 @@ async function init() {
     return;
   }
 
-  quest = await getQuestById(questId);
+  quest = await getQuestById(questId, authorId);
   if (!quest) {
     titleEl.textContent = "Не знайдено";
     panelEl.innerHTML = `<p class="page-placeholder">Квест не знайдено.</p>`;

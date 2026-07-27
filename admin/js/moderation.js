@@ -66,7 +66,7 @@ async function renderQueue() {
         .map((quest) => {
           const cover = resolveImage(quest.coverImage || quest.image);
           return `
-            <a href="quest-review.html?id=${quest.id}" class="quest-card-link">
+            <a href="quest-review.html?id=${quest.id}&author=${encodeURIComponent(quest.authorId || "")}" class="quest-card-link">
               <div class="quest-card">
                 <img src="${cover}" alt="${escapeHtml(quest.title)}">
                 <div class="quest-info">
@@ -101,6 +101,6 @@ renderQueue().catch((err) => {
   console.error(err);
   const root = document.getElementById("moderationQueue");
   if (root) {
-    root.innerHTML = `<p class="page-placeholder">Не вдалося завантажити чергу модерації</p>`;
+    root.innerHTML = `<p class="page-placeholder">Не вдалося завантажити чергу модерації.<br><small>${escapeHtml(err?.message || "")}</small></p>`;
   }
 });
