@@ -66,7 +66,7 @@ async function renderQueue() {
         .map((quest) => {
           const cover = resolveImage(quest.coverImage || quest.image);
           return `
-            <a href="quest-review.html?id=${quest.id}&author=${encodeURIComponent(quest.authorId || "")}" class="quest-card-link">
+            <a href="quest-review.html?id=${encodeURIComponent(quest.id)}" class="quest-card-link">
               <div class="quest-card">
                 <img src="${cover}" alt="${escapeHtml(quest.title)}">
                 <div class="quest-info">

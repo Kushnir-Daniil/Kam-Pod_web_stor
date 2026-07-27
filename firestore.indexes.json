@@ -1,20 +1,4 @@
 {
   "indexes": [],
-  "fieldOverrides": [
-    {
-      "collectionGroup": "quests",
-      "fieldPath": "status",
-      "indexes": [
-        { "order": "ASCENDING", "queryScope": "COLLECTION_GROUP" },
-        { "order": "DESCENDING", "queryScope": "COLLECTION_GROUP" }
-      ]
-    },
-    {
-      "collectionGroup": "quests",
-      "fieldPath": "id",
-      "indexes": [
-        { "order": "ASCENDING", "queryScope": "COLLECTION_GROUP" }
-      ]
-    }
-  ]
+  "fieldOverrides": []
 }

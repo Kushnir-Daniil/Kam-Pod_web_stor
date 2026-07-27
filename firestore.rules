@@ -19,8 +19,9 @@ service cloud.firestore {
       return roleOf(userDoc());
     }
 
+    // Email першим: працює навіть якщо users/{uid} ще без role: admin
     function isAdmin() {
-      return signedIn() && myRole() == 'admin';
+      return signedIn() && (isAdminEmail() || myRole() == 'admin');
     }
 
     function isKazkar() {
@@ -57,55 +58,41 @@ service cloud.firestore {
         && request.resource.data.get('isAdmin', false) == (roleOf(resource.data) == 'admin');
 
       allow update, delete: if isAdmin();
-
-      // Квести казкаря: users/{uid}/quests/{questId}
-      match /quests/{questId} {
-        allow read: if signedIn() && (
-          resource.data.status == 'published'
-          || request.auth.uid == userId
-          || isAdmin()
-        );
-
-        allow create: if isKazkar()
-          && isActive()
-          && request.auth.uid == userId
-          && request.resource.data.authorId == userId
-          && request.resource.data.id == questId
-          && request.resource.data.status in ['draft', 'pending_review'];
-
-        // Казкар: чернетка / на розгляд / відхилено / зняти з публікації в pending|draft
-        allow update: if isKazkar()
-          && isActive()
-          && request.auth.uid == userId
-          && request.resource.data.authorId == userId
-          && request.resource.data.id == resource.data.id
-          && request.resource.data.status in ['draft', 'pending_review', 'rejected', 'archived']
-          && request.resource.data.status != 'published';
-
-        // Адмін: погодити / відхилити / будь-яка правка статусу
-        allow update: if isAdmin();
-
-        allow delete: if isAdmin()
-          || (
-            isKazkar()
-            && request.auth.uid == userId
-            && resource.data.status == 'draft'
-          );
-      }
     }
 
-    // Черга модерації (щоб адмін бачив квести з інших браузерів без collection group)
-    match /moderationQueue/{questId} {
-      allow read: if isAdmin();
+    // ----- quests (спільна колекція) -----
+    // quests/{questId} — authorId у полях документа
+    match /quests/{questId} {
+      allow read: if signedIn() && (
+        resource.data.status == 'published'
+        || resource.data.authorId == request.auth.uid
+        || isAdmin()
+      );
 
-      allow create, update: if isKazkar()
+      allow create: if isKazkar()
         && isActive()
         && request.resource.data.authorId == request.auth.uid
-        && request.resource.data.status == 'pending_review'
-        && request.resource.data.questId == questId;
+        && request.resource.data.id == questId
+        && request.resource.data.status in ['draft', 'pending_review'];
+
+      // Казкар: свої квести, без прямої публікації
+      allow update: if isKazkar()
+        && isActive()
+        && resource.data.authorId == request.auth.uid
+        && request.resource.data.authorId == resource.data.authorId
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.status in ['draft', 'pending_review', 'rejected', 'archived']
+        && request.resource.data.status != 'published';
+
+      // Адмін: погодити / відхилити / будь-яка правка
+      allow update: if isAdmin();
 
       allow delete: if isAdmin()
-        || (isKazkar() && resource.data.authorId == request.auth.uid);
+        || (
+          isKazkar()
+          && resource.data.authorId == request.auth.uid
+          && resource.data.status == 'draft'
+        );
     }
 
     // ----- invite codes (казкар) -----
