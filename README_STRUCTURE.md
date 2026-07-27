@@ -97,6 +97,18 @@
 | `isAdmin` | `true` лише для admin (сумісність) |
 | `name`, `email`, `birthDate`, `coins`, `xp`, `createdAt` | профіль |
 
+Квести казкаря зберігаються в підколекції:
+
+`users/{kazkarUid}/quests/{questId}`
+
+| Поле | Значення |
+|------|----------|
+| `authorId` | той самий `kazkarUid` |
+| `status` | `draft` \| `pending_review` \| `rejected` \| `published` \| `archived` |
+| `title`, `story`, `comic`, `game`, … | контент квесту |
+
+Каталог гравців і черга адміна читають **collection group** `quests` (фільтр по `status`).
+
 Колекція `inviteCodes/{CODE}` (код у UPPERCASE):
 
 ```json
@@ -108,9 +120,7 @@
 }
 ```
 
-Статуси квесту: `draft` → `pending_review` → `published` \| `rejected` \| `archived`.
-
-Правила: файл `firestore.rules` у корені — скопіюйте в Firebase Console → Firestore → Rules.
+Правила: `firestore.rules`. Індекси collection group: `firestore.indexes.json` (або створити в Console, коли з’явиться посилання в помилці).
 
 ### Як додати код казкаря в Console
 
@@ -120,6 +130,8 @@
 4. При реєстрації оберіть «Казкар» і введіть цей код
 
 Існуючі користувачі з `isAdmin: true` при наступному логіні отримають `role: "admin"` автоматично.
+
+**Важливо:** після оновлення Rules опублікуйте їх у Firebase Console. Старі квести з IndexedDB браузера в хмару самі не переїдуть — казкар має знову **Зберегти / Опублікувати** квест.
 
 ---
 
