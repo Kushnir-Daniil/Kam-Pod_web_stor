@@ -14,25 +14,111 @@ let draft = createEmptyQuest({
   game: { buildFolder: "game-1", lockedUntil: "story", geo: null },
 });
 
+function readAsDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Не вдалося прочитати файл"));
+    reader.readAsDataURL(blob);
+  });
+}
+
+function loadImageFromUrl(url, revoke = false) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      if (revoke) URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => {
+      if (revoke) URL.revokeObjectURL(url);
+      reject(new Error("decode"));
+    };
+    img.src = url;
+  });
+}
+
+async function normalizeImageBlob(file) {
+  const name = (file.name || "").toLowerCase();
+  let type = file.type || "";
+
+  if (name.endsWith(".heic") || name.endsWith(".heif") || type.includes("heic") || type.includes("heif")) {
+    throw new Error("Формат HEIC не підтримується в браузері. У галереї обери «JPG» або зроби скрін / експорт у JPG.");
+  }
+
+  if (!type || type === "application/octet-stream" || type === "image/*") {
+    if (name.endsWith(".png")) type = "image/png";
+    else if (name.endsWith(".webp")) type = "image/webp";
+    else if (name.endsWith(".gif")) type = "image/gif";
+    else type = "image/jpeg";
+  }
+
+  const buffer = await file.arrayBuffer();
+  return new Blob([buffer], { type });
+}
+
+async function decodeImageBlob(blob) {
+  // 1) createImageBitmap (швидко, якщо браузер вміє)
+  if (typeof createImageBitmap === "function") {
+    try {
+      const bitmap = await createImageBitmap(blob, { imageOrientation: "from-image" });
+      return { source: bitmap, close: () => bitmap.close?.() };
+    } catch {
+      /* fallback */
+    }
+    try {
+      const bitmap = await createImageBitmap(blob);
+      return { source: bitmap, close: () => bitmap.close?.() };
+    } catch {
+      /* fallback */
+    }
+  }
+
+  // 2) object URL
+  try {
+    const objectUrl = URL.createObjectURL(blob);
+    const img = await loadImageFromUrl(objectUrl, true);
+    return { source: img, close: () => {} };
+  } catch {
+    /* fallback */
+  }
+
+  // 3) data URL (часто рятує Android-галерею)
+  const dataUrl = await readAsDataUrl(blob);
+  const img = await loadImageFromUrl(dataUrl, false);
+  return { source: img, close: () => {} };
+}
+
 async function compressImageFile(file, maxWidth = 1280, quality = 0.72) {
   if (!file) return "";
   if (file.size > 12_000_000) {
     throw new Error("Файл завеликий (макс. 12 МБ). Обери меншу картинку.");
   }
 
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, maxWidth / bitmap.width);
-  const width = Math.max(1, Math.round(bitmap.width * scale));
-  const height = Math.max(1, Math.round(bitmap.height * scale));
+  try {
+    const blob = await normalizeImageBlob(file);
+    const { source, close } = await decodeImageBlob(blob);
 
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(bitmap, 0, 0, width, height);
-  bitmap.close?.();
+    const srcW = source.width || source.videoWidth || 1;
+    const srcH = source.height || source.videoHeight || 1;
+    const scale = Math.min(1, maxWidth / srcW);
+    const width = Math.max(1, Math.round(srcW * scale));
+    const height = Math.max(1, Math.round(srcH * scale));
 
-  return canvas.toDataURL("image/jpeg", quality);
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(source, 0, 0, width, height);
+    close();
+
+    return canvas.toDataURL("image/jpeg", quality);
+  } catch (err) {
+    if (err?.message?.includes("HEIC")) throw err;
+    throw new Error(
+      "Не вдалося прочитати фото з галереї. Спробуй інше JPG/PNG або відкрий фото → «Поділитися / Зберегти як JPG» і завантаж знову.",
+    );
+  }
 }
 
 function showPreview(imgEl, src) {
