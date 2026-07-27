@@ -37,8 +37,8 @@
 |------|------------------|
 | `js/firebase.js` | Підключення Firebase (Auth + Firestore), експорт `auth` і `db` |
 | `js/nav.js` | Нижня навігація (Головна / Спільнота / Квести / Профіль / Адмін) |
-| `js/data/usersData.js` | Реєстрація, логін, вихід, профіль користувача в Firestore |
-| `js/data/questsData.js` | Модель квесту (історія / комікс / гра), збереження списку квестів (поки localStorage; далі — Firestore) |
+| `js/data/usersData.js` | Реєстрація, логін, вихід, ролі (`user` / `kazkar` / `admin`), коди запрошення |
+| `js/data/questsData.js` | Модель квесту + статуси (`draft` … `archived`); поки IndexedDB, далі — Firestore |
 
 ---
 
@@ -82,7 +82,44 @@
 | `js/admin.js` | Загальна логіка адмін-сторінок |
 | `js/quest-editor.js` | Логіка конструктора (збереження полів квесту) |
 
-Доступ до вкладки «Адмін» у навігації — для користувачів з `isAdmin: true` (список email у `usersData.js`).
+Доступ до вкладки «Адмін» — `role: "admin"`. Вкладка «Казкар» — `role: "kazkar"` (конструктор своїх квестів).
+
+---
+
+## Ролі акаунта (Firestore)
+
+Колекція `users/{uid}`:
+
+| Поле | Значення |
+|------|----------|
+| `role` | `user` \| `kazkar` \| `admin` |
+| `status` | `active` \| `blocked` |
+| `isAdmin` | `true` лише для admin (сумісність) |
+| `name`, `email`, `birthDate`, `coins`, `xp`, `createdAt` | профіль |
+
+Колекція `inviteCodes/{CODE}` (код у UPPERCASE):
+
+```json
+{
+  "role": "kazkar",
+  "active": true,
+  "maxUses": 50,
+  "usedCount": 0
+}
+```
+
+Статуси квесту: `draft` → `pending_review` → `published` \| `rejected` \| `archived`.
+
+Правила: файл `firestore.rules` у корені — скопіюйте в Firebase Console → Firestore → Rules.
+
+### Як додати код казкаря в Console
+
+1. Firestore → **Start collection** → `inviteCodes`
+2. Document ID: наприклад `FAWN2026`
+3. Поля як у JSON вище
+4. При реєстрації оберіть «Казкар» і введіть цей код
+
+Існуючі користувачі з `isAdmin: true` при наступному логіні отримають `role: "admin"` автоматично.
 
 ---
 

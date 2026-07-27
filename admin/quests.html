@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Адмін — Квести</title>
+  <title>Квести — бібліотека</title>
   <link rel="stylesheet" href="../user/css/user.css">
   <link rel="stylesheet" href="../user/css/quests.css">
   <link rel="stylesheet" href="css/admin.css">
@@ -11,16 +11,18 @@
 <body>
 
     <div class="page-container">
-        <h1 style="margin-bottom: 8px;">Квести</h1>
-        <p class="page-placeholder" style="margin-top: 0;">Список квестів для редагування (в розробці)</p>
-        <a href="quest-editor.html" class="btn-logout" style="text-align: center; text-decoration: none; margin-top: 32px;">
+        <h1 id="adminQuestsTitle" style="margin-bottom: 8px;">Квести</h1>
+        <p id="adminQuestsHint" class="page-placeholder" style="margin-top: 0;">Список квестів</p>
+        <a href="quest-editor.html" class="btn-logout" style="text-align: center; text-decoration: none; margin-top: 24px;">
             + Новий квест
         </a>
+        <div id="adminQuestsList" class="admin-quests-list"></div>
     </div>
 
     <div id="nav-placeholder"></div>
 
     <script type="module" src="../shared/js/nav.js"></script>
     <script type="module" src="js/admin.js"></script>
+    <script type="module" src="js/quests-list.js"></script>
 </body>
 </html>

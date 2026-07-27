@@ -4,6 +4,23 @@ const STORE = "quests";
 const LEGACY_STORAGE_KEY = "stories";
 const LEGACY_QUESTS_KEY = "quests";
 
+/** Статуси квесту (бібліотека казкаря + модерація) */
+export const QUEST_STATUS = Object.freeze({
+  DRAFT: "draft",
+  PENDING_REVIEW: "pending_review",
+  REJECTED: "rejected",
+  PUBLISHED: "published",
+  ARCHIVED: "archived",
+});
+
+export const QUEST_STATUS_LABELS = Object.freeze({
+  [QUEST_STATUS.DRAFT]: "Не завершено / не опубліковано",
+  [QUEST_STATUS.PENDING_REVIEW]: "На розгляді",
+  [QUEST_STATUS.REJECTED]: "Відхилено",
+  [QUEST_STATUS.PUBLISHED]: "Опубліковано",
+  [QUEST_STATUS.ARCHIVED]: "Архівовано",
+});
+
 /**
  * Порожній квест під конструктор:
  * історія (сторінки) → комікс (сцени) → гра (кнопка ГРАТИ + Unity build).
@@ -17,6 +34,12 @@ export function createEmptyQuest(partial = {}) {
     description: "",
     coverImage: "",
     rewards: { xp: 0, coins: 0, crystals: 0 },
+    authorId: null,
+    status: QUEST_STATUS.DRAFT,
+    reviewNote: "",
+    reviewedBy: null,
+    reviewedAt: null,
+    publishedAt: null,
     story: {
       pages: [],
     },
@@ -65,6 +88,12 @@ function migrateLegacyStory(story) {
     description: story.description || "",
     coverImage: story.coverImage || story.image || "",
     rewards: story.rewards || { xp: 0, coins: 0, crystals: 0 },
+    authorId: story.authorId || null,
+    status: story.status || "draft",
+    reviewNote: story.reviewNote || "",
+    reviewedBy: story.reviewedBy || null,
+    reviewedAt: story.reviewedAt || null,
+    publishedAt: story.publishedAt || null,
     story: story.story || { pages: [] },
     comic: story.comic || { scenes: [] },
     game: story.game || {

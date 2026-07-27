@@ -159,3 +159,74 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== Список квестів (казкар / адмін) ===== */
+.admin-quests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.admin-quest-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--color-border);
+  background: var(--color-card-bg);
+  text-decoration: none;
+  color: inherit;
+}
+
+.admin-quest-card__body {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.admin-quest-card__body strong {
+  font-size: 15px;
+}
+
+.admin-quest-card__meta {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.quest-status {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #eee;
+  color: #555;
+}
+
+.quest-status--draft {
+  background: #f0ebe6;
+  color: #6b5e54;
+}
+
+.quest-status--pending {
+  background: #fff3cd;
+  color: #8a6d1d;
+}
+
+.quest-status--rejected {
+  background: #fde2e1;
+  color: #a33b32;
+}
+
+.quest-status--published {
+  background: #e3f6ea;
+  color: #2f7a4a;
+}
+
+.quest-status--archived {
+  background: #e8e8e8;
+  color: #666;
+}

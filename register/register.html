@@ -25,7 +25,7 @@
 
             <div class="input-group">
                 <img src="../img/people.svg" class="icon-left" alt="">
-                <input type="text" placeholder="Ім'я" required>
+                <input type="text" id="registerName" placeholder="Ім'я" required>
             </div>
 
             <div class="input-group">
@@ -48,6 +48,29 @@
             <div class="input-group">
                 <img src="../img/date.svg" class="icon-left" alt="">
                 <input type="date" required>
+            </div>
+
+            <fieldset class="role-fieldset">
+                <legend>Тип акаунта</legend>
+                <label class="role-option">
+                    <input type="radio" name="accountType" value="user" checked>
+                    <span>
+                        <strong>Гравець</strong>
+                        <small>Профіль, квести, спільнота</small>
+                    </span>
+                </label>
+                <label class="role-option">
+                    <input type="radio" name="accountType" value="kazkar">
+                    <span>
+                        <strong>Казкар</strong>
+                        <small>Створення квестів (потрібен код)</small>
+                    </span>
+                </label>
+            </fieldset>
+
+            <div class="input-group invite-code-group" id="inviteCodeGroup" hidden>
+                <img src="../img/lock.svg" class="icon-left" alt="">
+                <input type="text" id="inviteCode" placeholder="Код запрошення казкаря" autocomplete="off">
             </div>
 
             <label class="terms">

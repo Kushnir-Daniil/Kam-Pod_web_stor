@@ -152,6 +152,62 @@ body {
   padding: 0;
 }
 
+/* ===== Вибір типу акаунта ===== */
+.role-fieldset {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  background: var(--color-card-bg);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.role-fieldset legend {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  padding: 0 4px;
+}
+
+.role-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.role-option:has(input:checked) {
+  background: rgba(240, 147, 56, 0.12);
+}
+
+.role-option input {
+  margin-top: 3px;
+  accent-color: var(--color-primary);
+}
+
+.role-option span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.role-option strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.role-option small {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.invite-code-group input {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 /* ===== Чекбокс згоди ===== */
 .terms {
   display: flex;
