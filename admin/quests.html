@@ -12,8 +12,16 @@
 
     <div class="page-container">
         <h1 id="adminQuestsTitle" style="margin-bottom: 8px;">Мої квести</h1>
-        <p id="adminQuestsHint" class="page-placeholder" style="margin-top: 0;">Бібліотека казкаря</p>
-        <a href="quest-editor.html" class="btn-logout" style="text-align: center; text-decoration: none; margin-top: 24px;">
+        <p id="adminQuestsHint" class="page-placeholder" style="margin-top: 0;">
+            Чорнетка — лише у вас. «Опублікувати» завжди надсилає квест адміну на перевірку.
+        </p>
+
+        <div class="tabs-row kazkar-tabs">
+            <button type="button" class="tab-btn active" data-kazkar-tab="published">Опубліковані</button>
+            <button type="button" class="tab-btn" data-kazkar-tab="drafts">У чорнетці</button>
+        </div>
+
+        <a href="quest-editor.html" class="btn-logout" style="text-align: center; text-decoration: none; margin-top: 8px;">
             + Новий квест
         </a>
         <div id="adminQuestsList" class="admin-quests-list"></div>
