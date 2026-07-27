@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Адмін — Перегляд квесту</title>
+  <link rel="stylesheet" href="../user/css/user.css">
+  <link rel="stylesheet" href="../user/css/quests.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+    <div class="page-container editor-page">
+        <header class="quest-player-header">
+            <a href="dashboard.html" class="quest-back" aria-label="Назад">←</a>
+            <div class="quest-player-heading">
+                <p class="quest-player-step" id="reviewMeta">На розгляді</p>
+                <h1 id="reviewTitle">Завантаження…</h1>
+            </div>
+        </header>
+
+        <div class="quest-mode-tabs" role="tablist">
+            <button type="button" class="quest-mode-tab active" data-mode="story">Історія</button>
+            <button type="button" class="quest-mode-tab" data-mode="comic">Комікс</button>
+            <button type="button" class="quest-mode-tab" data-mode="game">Гра</button>
+        </div>
+
+        <section id="reviewPanel" class="quest-mode-panel">
+            <p class="page-placeholder">Завантаження…</p>
+        </section>
+
+        <div class="review-actions" id="reviewActions" hidden>
+            <button type="button" class="btn-approve" id="approveBtn">Погодити</button>
+            <button type="button" class="btn-reject" id="rejectBtn">Відхилити</button>
+        </div>
+        <p id="reviewStatus" class="editor-status" hidden></p>
+    </div>
+
+    <div id="nav-placeholder"></div>
+
+    <script type="module" src="../shared/js/nav.js"></script>
+    <script type="module" src="js/admin.js"></script>
+    <script type="module" src="js/quest-review.js"></script>
+</body>
+</html>

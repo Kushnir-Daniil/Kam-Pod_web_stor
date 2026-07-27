@@ -1,4 +1,5 @@
-import { getQuestById } from "../../shared/js/data/questsData.js";
+import { getQuestById, QUEST_STATUS, isPublished } from "../../shared/js/data/questsData.js";
+import { getCurrentUser, canAccessAdminPanel } from "../../shared/js/data/usersData.js";
 
 const params = new URLSearchParams(window.location.search);
 const questId = params.get("id");
@@ -137,9 +138,25 @@ tabs.forEach((tab) => {
 
 getQuestById(questId).then((loaded) => {
   quest = loaded;
+  const user = getCurrentUser();
+  const canPreview =
+    canAccessAdminPanel() ||
+    (user && quest && quest.authorId === user.id);
+
+  if (quest && !isPublished(quest) && !canPreview) {
+    quest = null;
+    titleEl.textContent = "Квест недоступний";
+    panelEl.innerHTML = `<p class="page-placeholder">Цей квест ще не опубліковано.</p>`;
+    return;
+  }
+
   if (quest) {
     titleEl.textContent = quest.title || "Без назви";
-    stepEl.textContent = `${quest.type || "Квест"}${quest.duration ? ` · ${quest.duration}` : ""}`;
+    const statusHint =
+      quest.status && quest.status !== QUEST_STATUS.PUBLISHED
+        ? ` · ${quest.status}`
+        : "";
+    stepEl.textContent = `${quest.type || "Квест"}${quest.duration ? ` · ${quest.duration}` : ""}${statusHint}`;
     document.title = quest.title || "Квест";
   } else {
     titleEl.textContent = "Квест не знайдено";

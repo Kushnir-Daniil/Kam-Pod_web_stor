@@ -4,6 +4,8 @@ import {
   updateQuest,
   createEmptyQuest,
   QUEST_STATUS,
+  QUEST_STATUS_LABELS,
+  submitQuestForReview,
 } from "../../shared/js/data/questsData.js";
 import { getCurrentUser } from "../../shared/js/data/usersData.js";
 
@@ -169,7 +171,18 @@ const gameLock = document.getElementById("gameLock");
 const storyPagesEl = document.getElementById("storyPages");
 const comicScenesEl = document.getElementById("comicScenes");
 const saveBtn = document.getElementById("saveQuestBtn");
+const submitReviewBtn = document.getElementById("submitReviewBtn");
 const saveStatus = document.getElementById("saveStatus");
+
+function syncSubmitButton() {
+  if (!submitReviewBtn) return;
+  const canSubmit =
+    draft.id &&
+    (draft.status === QUEST_STATUS.DRAFT ||
+      draft.status === QUEST_STATUS.REJECTED ||
+      !draft.status);
+  submitReviewBtn.hidden = !canSubmit;
+}
 
 function fillMetaFields() {
   metaTitle.value = draft.title || "";
@@ -368,6 +381,7 @@ saveBtn.addEventListener("click", async () => {
     description: metaDescription.value.trim(),
     coverImage: draft.coverImage || "",
     authorId: draft.authorId || currentUser?.id || null,
+    authorName: draft.authorName || currentUser?.name || "",
     status: draft.status || QUEST_STATUS.DRAFT,
     reviewNote: draft.reviewNote || "",
     reviewedBy: draft.reviewedBy || null,
@@ -392,17 +406,23 @@ saveBtn.addEventListener("click", async () => {
 
   try {
     if (draft.id) {
-      await updateQuest(draft.id, payload);
+      const updated = await updateQuest(draft.id, payload);
+      Object.assign(draft, updated);
     } else {
       const created = await addQuest(payload);
       draft.id = created.id;
+      draft.status = created.status;
+      draft.authorId = created.authorId;
+      draft.authorName = created.authorName;
       history.replaceState(null, "", `quest-editor.html?id=${created.id}`);
       document.getElementById("editorTitle").textContent = "Редагування квесту";
     }
 
+    syncSubmitButton();
     saveStatus.hidden = false;
     saveStatus.classList.remove("error");
-    saveStatus.textContent = "Збережено! Дивись у вкладці «Квести».";
+    const statusLabel = QUEST_STATUS_LABELS[draft.status] || draft.status;
+    saveStatus.textContent = `Збережено (${statusLabel}).`;
   } catch (err) {
     console.error(err);
     saveStatus.hidden = false;
@@ -410,7 +430,34 @@ saveBtn.addEventListener("click", async () => {
     saveStatus.textContent = err?.message || "Помилка збереження";
   } finally {
     saveBtn.disabled = false;
-    saveBtn.textContent = "Зберегти квест";
+    saveBtn.textContent = "Зберегти чернетку";
+  }
+});
+
+submitReviewBtn?.addEventListener("click", async () => {
+  if (!draft.id) {
+    alert("Спочатку збережіть квест");
+    return;
+  }
+  if (!confirm("Надіслати квест адміну на розгляд?")) return;
+
+  submitReviewBtn.disabled = true;
+  submitReviewBtn.textContent = "Надсилання…";
+  try {
+    const updated = await submitQuestForReview(draft.id);
+    Object.assign(draft, updated);
+    syncSubmitButton();
+    saveStatus.hidden = false;
+    saveStatus.classList.remove("error");
+    saveStatus.textContent = "Надіслано на розгляд. Чекайте рішення адміна.";
+  } catch (err) {
+    console.error(err);
+    saveStatus.hidden = false;
+    saveStatus.classList.add("error");
+    saveStatus.textContent = err?.message || "Не вдалося надіслати";
+  } finally {
+    submitReviewBtn.disabled = false;
+    submitReviewBtn.textContent = "Надіслати на розгляд";
   }
 });
 
@@ -434,6 +481,7 @@ async function init() {
   fillMetaFields();
   renderStoryPages();
   renderComicScenes();
+  syncSubmitButton();
 }
 
 init().catch((err) => {

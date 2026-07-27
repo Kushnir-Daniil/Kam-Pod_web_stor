@@ -3,6 +3,7 @@ const DB_VERSION = 1;
 const STORE = "quests";
 const LEGACY_STORAGE_KEY = "stories";
 const LEGACY_QUESTS_KEY = "quests";
+const STATUS_MIGRATION_FLAG = "questy-status-migrated-v2";
 
 /** Статуси квесту (бібліотека казкаря + модерація) */
 export const QUEST_STATUS = Object.freeze({
@@ -35,6 +36,7 @@ export function createEmptyQuest(partial = {}) {
     coverImage: "",
     rewards: { xp: 0, coins: 0, crystals: 0 },
     authorId: null,
+    authorName: "",
     status: QUEST_STATUS.DRAFT,
     reviewNote: "",
     reviewedBy: null,
@@ -80,6 +82,9 @@ function txDone(tx) {
 }
 
 function migrateLegacyStory(story) {
+  const hasExplicitStatus = Boolean(story.status);
+  const status = hasExplicitStatus ? story.status : QUEST_STATUS.PUBLISHED;
+
   return createEmptyQuest({
     id: story.id ?? undefined,
     title: story.title || "",
@@ -89,11 +94,14 @@ function migrateLegacyStory(story) {
     coverImage: story.coverImage || story.image || "",
     rewards: story.rewards || { xp: 0, coins: 0, crystals: 0 },
     authorId: story.authorId || null,
-    status: story.status || "draft",
+    authorName: story.authorName || "",
+    status,
     reviewNote: story.reviewNote || "",
     reviewedBy: story.reviewedBy || null,
     reviewedAt: story.reviewedAt || null,
-    publishedAt: story.publishedAt || null,
+    publishedAt:
+      story.publishedAt ||
+      (status === QUEST_STATUS.PUBLISHED ? new Date().toISOString() : null),
     story: story.story || { pages: [] },
     comic: story.comic || { scenes: [] },
     game: story.game || {
@@ -140,9 +148,59 @@ async function migrateFromLocalStorageIfNeeded(db) {
   localStorage.removeItem(LEGACY_STORAGE_KEY);
 }
 
-export async function getQuests() {
+/**
+ * Одноразова міграція: увесь наявний контент до модерації
+ * (draft / без статусу) вважаємо вже опублікованим.
+ * Нові квести казкарів після цього лишаються draft, доки не пройдуть розгляд.
+ */
+async function migrateLegacyStatusesIfNeeded(db) {
+  if (localStorage.getItem(STATUS_MIGRATION_FLAG) === "1") return;
+
+  const items = await new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, "readonly");
+    const req = tx.objectStore(STORE).getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+
+  const tx = db.transaction(STORE, "readwrite");
+  const store = tx.objectStore(STORE);
+
+  for (const quest of items) {
+    if (
+      quest.status === QUEST_STATUS.PUBLISHED ||
+      quest.status === QUEST_STATUS.PENDING_REVIEW ||
+      quest.status === QUEST_STATUS.REJECTED ||
+      quest.status === QUEST_STATUS.ARCHIVED
+    ) {
+      continue;
+    }
+
+    store.put({
+      ...quest,
+      status: QUEST_STATUS.PUBLISHED,
+      publishedAt: quest.publishedAt || new Date().toISOString(),
+      authorName: quest.authorName || "",
+    });
+  }
+
+  await txDone(tx);
+  localStorage.setItem(STATUS_MIGRATION_FLAG, "1");
+}
+
+async function prepareDb() {
   const db = await openDb();
   await migrateFromLocalStorageIfNeeded(db);
+  await migrateLegacyStatusesIfNeeded(db);
+  return db;
+}
+
+export function isPublished(quest) {
+  return quest?.status === QUEST_STATUS.PUBLISHED;
+}
+
+export async function getQuests() {
+  const db = await prepareDb();
 
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE, "readonly");
@@ -155,12 +213,21 @@ export async function getQuests() {
   });
 }
 
+export async function getPublishedQuests() {
+  const all = await getQuests();
+  return all.filter(isPublished);
+}
+
+export async function getPendingReviewQuests() {
+  const all = await getQuests();
+  return all.filter((q) => q.status === QUEST_STATUS.PENDING_REVIEW);
+}
+
 export async function getQuestById(id) {
   const numericId = Number(id);
   if (!numericId) return null;
 
-  const db = await openDb();
-  await migrateFromLocalStorageIfNeeded(db);
+  const db = await prepareDb();
 
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE, "readonly");
@@ -171,8 +238,7 @@ export async function getQuestById(id) {
 }
 
 export async function addQuest(partial = {}) {
-  const db = await openDb();
-  await migrateFromLocalStorageIfNeeded(db);
+  const db = await prepareDb();
 
   const quest = createEmptyQuest(partial);
   delete quest.id;
@@ -188,7 +254,7 @@ export async function addQuest(partial = {}) {
 }
 
 export async function updateQuest(id, patch) {
-  const db = await openDb();
+  const db = await prepareDb();
   const current = await getQuestById(id);
   if (!current) return null;
 
@@ -203,6 +269,34 @@ export async function updateQuest(id, patch) {
     const req = tx.objectStore(STORE).put(next);
     req.onsuccess = () => resolve(next);
     req.onerror = () => reject(req.error);
+  });
+}
+
+export async function submitQuestForReview(id) {
+  return updateQuest(id, {
+    status: QUEST_STATUS.PENDING_REVIEW,
+    reviewNote: "",
+    reviewedBy: null,
+    reviewedAt: null,
+  });
+}
+
+export async function approveQuest(id, reviewerId = null) {
+  return updateQuest(id, {
+    status: QUEST_STATUS.PUBLISHED,
+    reviewedBy: reviewerId,
+    reviewedAt: new Date().toISOString(),
+    publishedAt: new Date().toISOString(),
+    reviewNote: "",
+  });
+}
+
+export async function rejectQuest(id, reviewerId = null, note = "") {
+  return updateQuest(id, {
+    status: QUEST_STATUS.REJECTED,
+    reviewedBy: reviewerId,
+    reviewedAt: new Date().toISOString(),
+    reviewNote: note || "Відхилено модератором",
   });
 }
 
