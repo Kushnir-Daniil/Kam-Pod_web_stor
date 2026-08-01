@@ -1,5 +1,6 @@
 import { getQuestById, QUEST_STATUS, isPublished } from "../../shared/js/data/questsData.js";
 import { getCurrentUser, canAccessAdminPanel } from "../../shared/js/data/usersData.js";
+import { markPartCompleted } from "../../shared/js/data/progressData.js";
 
 const params = new URLSearchParams(window.location.search);
 const questId = params.get("id");
