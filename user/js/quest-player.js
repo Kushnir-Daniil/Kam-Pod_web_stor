@@ -70,11 +70,12 @@ function renderMode(mode) {
       storyIndex -= 1;
       renderMode("story");
     });
-    document.getElementById("storyNext")?.addEventListener("click", () => {
+    document.getElementById("storyNext")?.addEventListener("click", async () => {
       if (storyIndex < pages.length - 1) {
         storyIndex += 1;
         renderMode("story");
       } else {
+        await markPartCompleted(quest, "story").catch(console.error);
         renderMode((quest.comic?.scenes || []).length ? "comic" : "game");
       }
     });
@@ -111,24 +112,49 @@ function renderMode(mode) {
       comicIndex -= 1;
       renderMode("comic");
     });
-    document.getElementById("comicNext")?.addEventListener("click", () => {
+    document.getElementById("comicNext")?.addEventListener("click", async () => {
       if (comicIndex < scenes.length - 1) {
         comicIndex += 1;
         renderMode("comic");
       } else {
+        await markPartCompleted(quest, "comic").catch(console.error);
         renderMode("game");
       }
     });
     return;
   }
 
-  const build = quest.game?.buildFolder;
+const build = quest.game?.buildFolder;
+
+if (build) {
   panelEl.innerHTML = `
     <div class="quest-game-cta">
       <p class="quest-game-cta__title">ГОТОВІ ДО ПРИГОД?</p>
-      ${build
-        ? `<a class="btn-logout" style="text-decoration:none;text-align:center" href="../builds/${build}/index.html" target="_blank" rel="noopener">ГРАТИ</a>`
-        : `<button type="button" class="btn-logout" disabled>Гра ще не прив’язана</button>`}
+      <iframe
+        id="gameFrame"
+        src="../builds/${build}/index.html"
+        style="width:100%; aspect-ratio:16/9; border:none; border-radius:16px; margin-top:16px;"
+        allow="fullscreen"
+      ></iframe>
+      <p id="gameResultLabel" class="page-placeholder" style="margin-top:12px;">Гра завантажується…</p>
+    </div>
+  `;
+
+  // Слухаємо результат від Unity-гри всередині iframe
+  window.onUnityGameResult = async (won) => {
+    const label = document.getElementById("gameResultLabel");
+    if (won) {
+      if (label) label.textContent = "Перемога! Нагороду нараховано.";
+      await markPartCompleted(quest, "game").catch(console.error);
+    } else {
+      if (label) label.textContent = "Спробуй ще раз, щоб отримати нагороду.";
+    }
+  };
+} else {
+  panelEl.innerHTML = `
+    <div class="quest-game-cta">
+      <p class="quest-game-cta__title">ГОТОВІ ДО ПРИГОД?</p>
+      <button type="button" class="btn-logout" disabled>Гра ще не прив'язана</button>
     </div>
   `;
 }
