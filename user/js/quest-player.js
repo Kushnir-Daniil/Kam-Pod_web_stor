@@ -14,6 +14,7 @@ let quest = null;
 let currentMode = "story";
 let storyIndex = 0;
 let comicIndex = 0;
+let gameIframeCreated = false;
 
 function resolveImage(src) {
   if (!src) return "";
@@ -123,40 +124,47 @@ function renderMode(mode) {
     });
     return;
   }
-}
-const build = quest.game?.buildFolder;
 
-if (build) {
-  panelEl.innerHTML = `
-    <div class="quest-game-cta">
-      <p class="quest-game-cta__title">ГОТОВІ ДО ПРИГОД?</p>
-      <iframe
-        id="gameFrame"
-        src="../builds/${build}/index.html"
-        style="width:100%; aspect-ratio:16/9; border:none; border-radius:16px; margin-top:16px;"
-        allow="fullscreen"
-      ></iframe>
-      <p id="gameResultLabel" class="page-placeholder" style="margin-top:12px;">Гра завантажується…</p>
-    </div>
-  `;
+  // mode === "game"
+  const build = quest?.game?.buildFolder;
 
-  // Слухаємо результат від Unity-гри всередині iframe
-  window.onUnityGameResult = async (won) => {
-    const label = document.getElementById("gameResultLabel");
-    if (won) {
-      if (label) label.textContent = "Перемога! Нагороду нараховано.";
-      await markPartCompleted(quest, "game").catch(console.error);
-    } else {
-      if (label) label.textContent = "Спробуй ще раз, щоб отримати нагороду.";
-    }
-  };
-} else {
-  panelEl.innerHTML = `
-    <div class="quest-game-cta">
-      <p class="quest-game-cta__title">ГОТОВІ ДО ПРИГОД?</p>
-      <button type="button" class="btn-logout" disabled>Гра ще не прив'язана</button>
-    </div>
-  `;
+  if (!build) {
+    panelEl.innerHTML = `
+      <div class="quest-game-cta">
+        <p class="quest-game-cta__title">ГОТОВІ ДО ПРИГОД?</p>
+        <button type="button" class="btn-logout" disabled>Гра ще не прив'язана</button>
+      </div>
+    `;
+    return;
+  }
+
+  if (!gameIframeCreated) {
+    panelEl.innerHTML = `
+      <div class="quest-game-cta">
+        <p class="quest-game-cta__title">ГОТОВІ ДО ПРИГОД?</p>
+        <iframe
+          id="gameFrame"
+          src="../builds/${build}/index.html"
+          style="width:100%; aspect-ratio:16/9; border:none; border-radius:16px; margin-top:16px;"
+          allow="fullscreen"
+        ></iframe>
+        <p id="gameResultLabel" class="page-placeholder" style="margin-top:12px;">Гра завантажується…</p>
+      </div>
+    `;
+    gameIframeCreated = true;
+
+    window.onUnityGameResult = async (won) => {
+      const label = document.getElementById("gameResultLabel");
+      if (won) {
+        if (label) label.textContent = "Перемога! Нагороду нараховано.";
+        await markPartCompleted(quest, "game").catch(console.error);
+      } else {
+        if (label) label.textContent = "Спробуй ще раз, щоб отримати нагороду.";
+      }
+    };
+  }
+  // якщо gameIframeCreated вже true — нічого не робимо,
+  // iframe вже намальований раніше і продовжує вантажитись/працювати
 }
 
 tabs.forEach((tab) => {
