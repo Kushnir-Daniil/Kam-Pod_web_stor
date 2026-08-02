@@ -123,7 +123,7 @@ function renderMode(mode) {
     });
     return;
   }
-
+}
 const build = quest.game?.buildFolder;
 
 if (build) {
