@@ -301,6 +301,20 @@
   margin-bottom: 20px;
 }
 
+.quest-game-frame {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: none;
+  border-radius: 16px;
+  margin-top: 16px;
+  background: #000;
+}
+
+.quest-game-result {
+  margin-top: 12px;
+}
+
 .story-page h2 {
   font-size: 18px;
   margin: 12px 0 8px;
