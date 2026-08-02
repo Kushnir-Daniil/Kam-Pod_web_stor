@@ -15,6 +15,38 @@ let currentMode = "story";
 let storyIndex = 0;
 let comicIndex = 0;
 
+const PROGRESS_KEY = "questProgressByUser";
+
+function saveQuestProgress(percent) {
+  const user = getCurrentUser();
+  if (!user?.id || !questId) return;
+  try {
+    const all = JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
+    const mine = all[user.id] || {};
+    const prev = Number(mine[questId]?.percent) || 0;
+    mine[questId] = {
+      percent: Math.max(prev, Math.min(100, Math.round(percent))),
+      updatedAt: Date.now(),
+    };
+    all[user.id] = mine;
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify(all));
+  } catch {
+    /* ignore */
+  }
+}
+
+function calcProgress() {
+  const pages = quest?.story?.pages?.length || 0;
+  const scenes = quest?.comic?.scenes?.length || 0;
+  const total = pages + scenes + 1;
+  if (!total) return 5;
+  let done = 0;
+  if (currentMode === "story") done = storyIndex + 1;
+  else if (currentMode === "comic") done = pages + comicIndex + 1;
+  else done = total;
+  return Math.max(5, Math.min(99, Math.round((done / total) * 100)));
+}
+
 function resolveImage(src) {
   if (!src) return "";
   if (
@@ -41,6 +73,8 @@ function renderMode(mode) {
     panelEl.innerHTML = `<p class="page-placeholder">Квест не знайдено. Поверніться до списку.</p>`;
     return;
   }
+
+  saveQuestProgress(calcProgress());
 
   if (mode === "story") {
     const pages = quest.story?.pages || [];
@@ -150,6 +184,36 @@ function renderMode(mode) {
   });
 }
 
+function bindGameResultListener() {
+  if (window.__questGameMessageHandler) {
+    window.removeEventListener("message", window.__questGameMessageHandler);
+  }
+
+  window.__questGameMessageHandler = async (event) => {
+    if (event.origin !== window.location.origin) return;
+    const data = event.data;
+    if (!data || data.type !== "kamianets-deer") return;
+
+    const label = document.getElementById("gameResultLabel");
+    if (data.status === "completed") {
+      if (label) {
+        label.hidden = false;
+        label.textContent = "Перемога! Нагороду нараховано.";
+      }
+      saveQuestProgress(100);
+      await markPartCompleted(quest, "game").catch(console.error);
+      return;
+    }
+
+    if (label) {
+      label.hidden = false;
+      label.textContent = "Спробуй ще раз, щоб отримати нагороду.";
+    }
+  };
+
+  window.addEventListener("message", window.__questGameMessageHandler);
+}
+
 function openGameFullscreen(build) {
   // Не даємо відкрити другий оверлей поверх першого
   if (document.getElementById("gameFullscreenOverlay")) return;
@@ -183,30 +247,19 @@ function openGameFullscreen(build) {
       src="../builds/${build}/index.html"
       style="width:100%; height:100%; border:none; display:block;"
       allow="fullscreen"
+      allowfullscreen
+      title="Гра квесту"
     ></iframe>
   `;
   document.body.appendChild(overlay);
+  document.body.classList.add("quest-game-no-scroll");
 
   document.getElementById("closeGameBtn")?.addEventListener("click", () => {
     overlay.remove();
+    document.body.classList.remove("quest-game-no-scroll");
   });
 
-  // Слухаємо результат від Unity-гри всередині iframe
-  window.onUnityGameResult = async (won) => {
-    const label = document.getElementById("gameResultLabel");
-    if (won) {
-      if (label) {
-        label.hidden = false;
-        label.textContent = "Перемога! Нагороду нараховано.";
-      }
-      await markPartCompleted(quest, "game").catch(console.error);
-    } else {
-      if (label) {
-        label.hidden = false;
-        label.textContent = "Спробуй ще раз, щоб отримати нагороду.";
-      }
-    }
-  };
+  bindGameResultListener();
 }
 
 tabs.forEach((tab) => {
@@ -235,6 +288,7 @@ getQuestById(questId).then((loaded) => {
         : "";
     stepEl.textContent = `${quest.type || "Квест"}${quest.duration ? ` · ${quest.duration}` : ""}${statusHint}`;
     document.title = quest.title || "Квест";
+    saveQuestProgress(5);
   } else {
     titleEl.textContent = "Квест не знайдено";
   }
