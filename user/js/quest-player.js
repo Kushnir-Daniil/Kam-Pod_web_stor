@@ -1,5 +1,6 @@
 import { getQuestById, QUEST_STATUS, isPublished } from "../../shared/js/data/questsData.js";
 import { getCurrentUser, canAccessAdminPanel } from "../../shared/js/data/usersData.js";
+import { markPartCompleted } from "../../shared/js/data/progressData.js";
 
 const params = new URLSearchParams(window.location.search);
 const questId = params.get("id");
@@ -63,7 +64,6 @@ function resolveImage(src) {
 
 function renderMode(mode) {
   currentMode = mode;
-  document.body.classList.remove("quest-game-no-scroll");
 
   tabs.forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.mode === mode);
@@ -104,11 +104,12 @@ function renderMode(mode) {
       storyIndex -= 1;
       renderMode("story");
     });
-    document.getElementById("storyNext")?.addEventListener("click", () => {
+    document.getElementById("storyNext")?.addEventListener("click", async () => {
       if (storyIndex < pages.length - 1) {
         storyIndex += 1;
         renderMode("story");
       } else {
+        await markPartCompleted(quest, "story").catch(console.error);
         renderMode((quest.comic?.scenes || []).length ? "comic" : "game");
       }
     });
@@ -145,86 +146,120 @@ function renderMode(mode) {
       comicIndex -= 1;
       renderMode("comic");
     });
-    document.getElementById("comicNext")?.addEventListener("click", () => {
+    document.getElementById("comicNext")?.addEventListener("click", async () => {
       if (comicIndex < scenes.length - 1) {
         comicIndex += 1;
         renderMode("comic");
       } else {
+        await markPartCompleted(quest, "comic").catch(console.error);
         renderMode("game");
       }
     });
     return;
   }
 
-  const build = quest.game?.buildFolder;
+  // mode === "game"
+  const build = quest?.game?.buildFolder;
 
-  if (build) {
-    panelEl.innerHTML = `
-      <div class="quest-game-cta" id="questGameStage">
-        <div class="quest-game-cta__bar">
-          <p class="quest-game-cta__title">ГОТОВІ ДО ПРИГОД?</p>
-          <button type="button" class="quest-game-expand" id="gameExpandBtn" aria-pressed="false">
-            На весь екран
-          </button>
-        </div>
-        <iframe
-          id="gameFrame"
-          class="quest-game-frame"
-          src="../builds/${build}/index.html"
-          allow="fullscreen"
-          allowfullscreen
-          title="Гра квесту"
-        ></iframe>
-        <p id="gameResultLabel" class="page-placeholder quest-game-result">Гра завантажується…</p>
-      </div>
-    `;
-
-    const stage = document.getElementById("questGameStage");
-    const expandBtn = document.getElementById("gameExpandBtn");
-
-    const setExpanded = (expanded) => {
-      stage?.classList.toggle("is-expanded", expanded);
-      document.body.classList.toggle("quest-game-no-scroll", expanded);
-      if (expandBtn) {
-        expandBtn.setAttribute("aria-pressed", expanded ? "true" : "false");
-        expandBtn.textContent = expanded ? "Згорнути" : "На весь екран";
-      }
-    };
-
-    expandBtn?.addEventListener("click", () => {
-      setExpanded(!stage?.classList.contains("is-expanded"));
-    });
-
-    if (window.__questGameMessageHandler) {
-      window.removeEventListener("message", window.__questGameMessageHandler);
-    }
-
-    window.__questGameMessageHandler = (event) => {
-      if (event.origin !== window.location.origin) return;
-      const data = event.data;
-      if (!data || data.type !== "kamianets-deer") return;
-
-      const label = document.getElementById("gameResultLabel");
-      if (data.status === "completed") {
-        if (label) label.textContent = "Перемога! Прогрес збережено.";
-        saveQuestProgress(100);
-        return;
-      }
-
-      if (label) {
-        label.textContent = "Спробуй ще раз, щоб отримати нагороду.";
-      }
-    };
-
-    window.addEventListener("message", window.__questGameMessageHandler);
-  } else {
+  if (!build) {
     panelEl.innerHTML = `
       <div class="quest-game-cta">
         <p class="quest-game-cta__title">ГОТОВІ ДО ПРИГОД?</p>
-        <button type="button" class="btn-logout" disabled>Гра ще не прив’язана</button>
+        <button type="button" class="btn-logout" disabled>Гра ще не прив'язана</button>
       </div>
     `;
+    return;
   }
+
+  panelEl.innerHTML = `
+    <div class="quest-game-cta">
+      <p class="quest-game-cta__title">ГОТОВІ ДО ПРИГОД?</p>
+      <button type="button" class="btn-logout" id="startGameBtn">ГРАТИ</button>
+      <p id="gameResultLabel" class="page-placeholder" style="margin-top:12px;" hidden></p>
+    </div>
+  `;
+
+  document.getElementById("startGameBtn")?.addEventListener("click", () => {
+    openGameFullscreen(build);
+  });
+}
+
+function bindGameResultListener() {
+  if (window.__questGameMessageHandler) {
+    window.removeEventListener("message", window.__questGameMessageHandler);
+  }
+
+  window.__questGameMessageHandler = async (event) => {
+    if (event.origin !== window.location.origin) return;
+    const data = event.data;
+    if (!data || data.type !== "kamianets-deer") return;
+
+    const label = document.getElementById("gameResultLabel");
+    if (data.status === "completed") {
+      if (label) {
+        label.hidden = false;
+        label.textContent = "Перемога! Нагороду нараховано.";
+      }
+      saveQuestProgress(100);
+      await markPartCompleted(quest, "game").catch(console.error);
+      return;
+    }
+
+    if (label) {
+      label.hidden = false;
+      label.textContent = "Спробуй ще раз, щоб отримати нагороду.";
+    }
+  };
+
+  window.addEventListener("message", window.__questGameMessageHandler);
+}
+
+function openGameFullscreen(build) {
+  // Не даємо відкрити другий оверлей поверх першого
+  if (document.getElementById("gameFullscreenOverlay")) return;
+
+  const overlay = document.createElement("div");
+  overlay.id = "gameFullscreenOverlay";
+  overlay.style.cssText = `
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    z-index: 9999;
+  `;
+  overlay.innerHTML = `
+    <button type="button" id="closeGameBtn" style="
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 10000;
+      background: rgba(255,255,255,0.9);
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      font-size: 18px;
+      cursor: pointer;
+    ">✕</button>
+    <iframe
+      id="gameFrame"
+      src="../builds/${build}/index.html"
+      style="width:100%; height:100%; border:none; display:block;"
+      allow="fullscreen"
+      allowfullscreen
+      title="Гра квесту"
+    ></iframe>
+  `;
+  document.body.appendChild(overlay);
+  document.body.classList.add("quest-game-no-scroll");
+
+  document.getElementById("closeGameBtn")?.addEventListener("click", () => {
+    overlay.remove();
+    document.body.classList.remove("quest-game-no-scroll");
+  });
+
+  bindGameResultListener();
 }
 
 tabs.forEach((tab) => {
