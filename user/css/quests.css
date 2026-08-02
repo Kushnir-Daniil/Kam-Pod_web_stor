@@ -288,31 +288,102 @@
 
 .quest-game-cta {
   text-align: center;
-  padding: 40px 16px;
+  padding: 16px;
   background: var(--color-card-bg);
   border-radius: 16px;
   border: 1px solid var(--color-border);
 }
 
+.quest-game-cta__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
 .quest-game-cta__title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.04em;
-  margin-bottom: 20px;
+  margin: 0;
+  text-align: left;
+}
+
+.quest-game-expand {
+  flex-shrink: 0;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  border-radius: 20px;
+  padding: 8px 14px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.quest-game-expand:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
 }
 
 .quest-game-frame {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  height: min(70vh, 560px);
+  min-height: 320px;
   border: none;
   border-radius: 16px;
-  margin-top: 16px;
   background: #000;
 }
 
 .quest-game-result {
   margin-top: 12px;
+  margin-bottom: 0;
+}
+
+.quest-game-cta.is-expanded {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  max-width: none;
+  border-radius: 0;
+  border: none;
+  padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  background: #111;
+}
+
+.quest-game-cta.is-expanded .quest-game-cta__bar {
+  margin-bottom: 8px;
+}
+
+.quest-game-cta.is-expanded .quest-game-cta__title {
+  color: #fff;
+}
+
+.quest-game-cta.is-expanded .quest-game-expand {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+.quest-game-cta.is-expanded .quest-game-frame {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+  border-radius: 12px;
+}
+
+.quest-game-cta.is-expanded .quest-game-result {
+  color: #d8d0c8;
+  margin-top: 8px;
+}
+
+body.quest-game-no-scroll {
+  overflow: hidden;
 }
 
 .story-page h2 {

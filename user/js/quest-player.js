@@ -63,6 +63,7 @@ function resolveImage(src) {
 
 function renderMode(mode) {
   currentMode = mode;
+  document.body.classList.remove("quest-game-no-scroll");
 
   tabs.forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.mode === mode);
@@ -159,18 +160,40 @@ function renderMode(mode) {
 
   if (build) {
     panelEl.innerHTML = `
-      <div class="quest-game-cta">
-        <p class="quest-game-cta__title">ГОТОВІ ДО ПРИГОД?</p>
+      <div class="quest-game-cta" id="questGameStage">
+        <div class="quest-game-cta__bar">
+          <p class="quest-game-cta__title">ГОТОВІ ДО ПРИГОД?</p>
+          <button type="button" class="quest-game-expand" id="gameExpandBtn" aria-pressed="false">
+            На весь екран
+          </button>
+        </div>
         <iframe
           id="gameFrame"
           class="quest-game-frame"
           src="../builds/${build}/index.html"
           allow="fullscreen"
+          allowfullscreen
           title="Гра квесту"
         ></iframe>
         <p id="gameResultLabel" class="page-placeholder quest-game-result">Гра завантажується…</p>
       </div>
     `;
+
+    const stage = document.getElementById("questGameStage");
+    const expandBtn = document.getElementById("gameExpandBtn");
+
+    const setExpanded = (expanded) => {
+      stage?.classList.toggle("is-expanded", expanded);
+      document.body.classList.toggle("quest-game-no-scroll", expanded);
+      if (expandBtn) {
+        expandBtn.setAttribute("aria-pressed", expanded ? "true" : "false");
+        expandBtn.textContent = expanded ? "Згорнути" : "На весь екран";
+      }
+    };
+
+    expandBtn?.addEventListener("click", () => {
+      setExpanded(!stage?.classList.contains("is-expanded"));
+    });
 
     if (window.__questGameMessageHandler) {
       window.removeEventListener("message", window.__questGameMessageHandler);
