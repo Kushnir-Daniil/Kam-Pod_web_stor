@@ -14,6 +14,38 @@ let currentMode = "story";
 let storyIndex = 0;
 let comicIndex = 0;
 
+const PROGRESS_KEY = "questProgressByUser";
+
+function saveQuestProgress(percent) {
+  const user = getCurrentUser();
+  if (!user?.id || !questId) return;
+  try {
+    const all = JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
+    const mine = all[user.id] || {};
+    const prev = Number(mine[questId]?.percent) || 0;
+    mine[questId] = {
+      percent: Math.max(prev, Math.min(100, Math.round(percent))),
+      updatedAt: Date.now(),
+    };
+    all[user.id] = mine;
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify(all));
+  } catch {
+    /* ignore */
+  }
+}
+
+function calcProgress() {
+  const pages = quest?.story?.pages?.length || 0;
+  const scenes = quest?.comic?.scenes?.length || 0;
+  const total = pages + scenes + 1;
+  if (!total) return 5;
+  let done = 0;
+  if (currentMode === "story") done = storyIndex + 1;
+  else if (currentMode === "comic") done = pages + comicIndex + 1;
+  else done = total;
+  return Math.max(5, Math.min(99, Math.round((done / total) * 100)));
+}
+
 function resolveImage(src) {
   if (!src) return "";
   if (
@@ -31,6 +63,7 @@ function resolveImage(src) {
 
 function renderMode(mode) {
   currentMode = mode;
+  document.body.classList.remove("quest-game-no-scroll");
 
   tabs.forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.mode === mode);
@@ -40,6 +73,8 @@ function renderMode(mode) {
     panelEl.innerHTML = `<p class="page-placeholder">Квест не знайдено. Поверніться до списку.</p>`;
     return;
   }
+
+  saveQuestProgress(calcProgress());
 
   if (mode === "story") {
     const pages = quest.story?.pages || [];
@@ -122,14 +157,74 @@ function renderMode(mode) {
   }
 
   const build = quest.game?.buildFolder;
-  panelEl.innerHTML = `
-    <div class="quest-game-cta">
-      <p class="quest-game-cta__title">ГОТОВІ ДО ПРИГОД?</p>
-      ${build
-        ? `<a class="btn-logout" style="text-decoration:none;text-align:center" href="../builds/${build}/index.html" target="_blank" rel="noopener">ГРАТИ</a>`
-        : `<button type="button" class="btn-logout" disabled>Гра ще не прив’язана</button>`}
-    </div>
-  `;
+
+  if (build) {
+    panelEl.innerHTML = `
+      <div class="quest-game-cta" id="questGameStage">
+        <div class="quest-game-cta__bar">
+          <p class="quest-game-cta__title">ГОТОВІ ДО ПРИГОД?</p>
+          <button type="button" class="quest-game-expand" id="gameExpandBtn" aria-pressed="false">
+            На весь екран
+          </button>
+        </div>
+        <iframe
+          id="gameFrame"
+          class="quest-game-frame"
+          src="../builds/${build}/index.html"
+          allow="fullscreen"
+          allowfullscreen
+          title="Гра квесту"
+        ></iframe>
+        <p id="gameResultLabel" class="page-placeholder quest-game-result">Гра завантажується…</p>
+      </div>
+    `;
+
+    const stage = document.getElementById("questGameStage");
+    const expandBtn = document.getElementById("gameExpandBtn");
+
+    const setExpanded = (expanded) => {
+      stage?.classList.toggle("is-expanded", expanded);
+      document.body.classList.toggle("quest-game-no-scroll", expanded);
+      if (expandBtn) {
+        expandBtn.setAttribute("aria-pressed", expanded ? "true" : "false");
+        expandBtn.textContent = expanded ? "Згорнути" : "На весь екран";
+      }
+    };
+
+    expandBtn?.addEventListener("click", () => {
+      setExpanded(!stage?.classList.contains("is-expanded"));
+    });
+
+    if (window.__questGameMessageHandler) {
+      window.removeEventListener("message", window.__questGameMessageHandler);
+    }
+
+    window.__questGameMessageHandler = (event) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data;
+      if (!data || data.type !== "kamianets-deer") return;
+
+      const label = document.getElementById("gameResultLabel");
+      if (data.status === "completed") {
+        if (label) label.textContent = "Перемога! Прогрес збережено.";
+        saveQuestProgress(100);
+        return;
+      }
+
+      if (label) {
+        label.textContent = "Спробуй ще раз, щоб отримати нагороду.";
+      }
+    };
+
+    window.addEventListener("message", window.__questGameMessageHandler);
+  } else {
+    panelEl.innerHTML = `
+      <div class="quest-game-cta">
+        <p class="quest-game-cta__title">ГОТОВІ ДО ПРИГОД?</p>
+        <button type="button" class="btn-logout" disabled>Гра ще не прив’язана</button>
+      </div>
+    `;
+  }
 }
 
 tabs.forEach((tab) => {
@@ -158,6 +253,7 @@ getQuestById(questId).then((loaded) => {
         : "";
     stepEl.textContent = `${quest.type || "Квест"}${quest.duration ? ` · ${quest.duration}` : ""}${statusHint}`;
     document.title = quest.title || "Квест";
+    saveQuestProgress(5);
   } else {
     titleEl.textContent = "Квест не знайдено";
   }
