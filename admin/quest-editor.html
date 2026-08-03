@@ -58,10 +58,6 @@
                     <span>Монети</span>
                     <input type="number" id="metaCoins" min="0" value="10">
                 </label>
-                <label class="editor-field">
-                    <span>Кристали</span>
-                    <input type="number" id="metaCrystals" min="0" value="1">
-                </label>
             </div>
         </section>
 
@@ -97,7 +93,33 @@
                     <option value="none">Одразу (без блокування)</option>
                 </select>
             </label>
-            <p class="editor-hint">Білд уже має лежати в <code>builds/game-1/</code>. Адмін лише прив’язує його до квесту. Картинки стискаються автоматично.</p>
+            <p class="editor-hint">Білд уже має лежати в <code>builds/game-1/</code>. Адмін лише прив'язує його до квесту. Картинки стискаються автоматично.</p>
+
+            <label class="editor-field">
+                <span>Місто</span>
+                <input type="text" id="gameGeoCity" placeholder="Кам'янець-Подільський">
+            </label>
+            <label class="editor-field">
+                <span>Назва місця</span>
+                <input type="text" id="gameGeoPlace" placeholder="Папська вежа">
+            </label>
+            <div class="editor-row">
+                <label class="editor-field">
+                    <span>Широта (lat)</span>
+                    <input type="number" id="gameGeoLat" step="any" placeholder="48.6798">
+                </label>
+                <label class="editor-field">
+                    <span>Довгота (lng)</span>
+                    <input type="number" id="gameGeoLng" step="any" placeholder="26.5854">
+                </label>
+            </div>
+            <label class="editor-field">
+                <span>Радіус геозони (метрів)</span>
+                <input type="number" id="gameGeoRadius" min="0" value="100">
+            </label>
+            <button type="button" class="btn-secondary-editor" id="useCurrentLocationBtn">📍 Взяти поточні координати</button>
+            <p class="editor-hint">Якщо "Широта"/"Довгота" порожні — геозона не активна, місце не рахуватиметься як "відкрите".</p>
+            <p class="editor-hint">Не біля об'єкта? Відкрий Google Maps → знайди місце → натисни правою кнопкою (на телефоні — довге натискання) на потрібну точку → скопіюй координати з підказки → встав у поля "Широта"/"Довгота" вище.</p>
         </section>
 
         <div class="editor-actions">

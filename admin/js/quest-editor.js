@@ -164,7 +164,6 @@ const metaCover = document.getElementById("metaCover");
 const metaCoverPreview = document.getElementById("metaCoverPreview");
 const metaXp = document.getElementById("metaXp");
 const metaCoins = document.getElementById("metaCoins");
-const metaCrystals = document.getElementById("metaCrystals");
 const gameBuild = document.getElementById("gameBuild");
 const gameLock = document.getElementById("gameLock");
 const storyPagesEl = document.getElementById("storyPages");
@@ -172,6 +171,25 @@ const comicScenesEl = document.getElementById("comicScenes");
 const saveBtn = document.getElementById("saveQuestBtn");
 const publishQuestBtn = document.getElementById("publishQuestBtn");
 const saveStatus = document.getElementById("saveStatus");
+const gameGeoCity = document.getElementById("gameGeoCity");
+const gameGeoPlace = document.getElementById("gameGeoPlace");
+const gameGeoLat = document.getElementById("gameGeoLat");
+const gameGeoLng = document.getElementById("gameGeoLng");
+const gameGeoRadius = document.getElementById("gameGeoRadius");
+const useCurrentLocationBtn = document.getElementById("useCurrentLocationBtn");
+
+function buildGeoPayload() {
+  const lat = gameGeoLat.value.trim();
+  const lng = gameGeoLng.value.trim();
+  if (!lat || !lng) return null; // без координат геозони немає
+  return {
+    city: gameGeoCity.value.trim(),
+    placeName: gameGeoPlace.value.trim(),
+    lat: Number(lat),
+    lng: Number(lng),
+    radius: Number(gameGeoRadius.value) || 100,
+  };
+}
 
 function buildPayload(currentUser, statusOverride) {
   return {
@@ -190,14 +208,13 @@ function buildPayload(currentUser, statusOverride) {
     rewards: {
       xp: Number(metaXp.value) || 0,
       coins: Number(metaCoins.value) || 0,
-      crystals: Number(metaCrystals.value) || 0,
     },
     story: { pages: draft.story.pages },
     comic: { scenes: draft.comic.scenes },
     game: {
       buildFolder: gameBuild.value,
       lockedUntil: gameLock.value,
-      geo: draft.game.geo || null,
+      geo: buildGeoPayload(),
     },
   };
 }
@@ -299,10 +316,16 @@ function fillMetaFields() {
   metaDescription.value = draft.description || "";
   metaXp.value = draft.rewards?.xp ?? 20;
   metaCoins.value = draft.rewards?.coins ?? 10;
-  metaCrystals.value = draft.rewards?.crystals ?? 1;
   gameBuild.value = draft.game?.buildFolder || "game-1";
   gameLock.value = draft.game?.lockedUntil || "story";
   showPreview(metaCoverPreview, draft.coverImage);
+
+  const geo = draft.game?.geo;
+  gameGeoCity.value = geo?.city || "";
+  gameGeoPlace.value = geo?.placeName || "";
+  gameGeoLat.value = geo?.lat ?? "";
+  gameGeoLng.value = geo?.lng ?? "";
+  gameGeoRadius.value = geo?.radius ?? 100;
 }
 
 metaCover.addEventListener("change", async () => {
@@ -473,6 +496,29 @@ comicScenesEl.addEventListener("input", (e) => {
   }
 });
 
+useCurrentLocationBtn?.addEventListener("click", () => {
+  if (!navigator.geolocation) {
+    alert("Геолокація не підтримується цим браузером");
+    return;
+  }
+  useCurrentLocationBtn.disabled = true;
+  useCurrentLocationBtn.textContent = "Визначаємо…";
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      gameGeoLat.value = pos.coords.latitude.toFixed(6);
+      gameGeoLng.value = pos.coords.longitude.toFixed(6);
+      useCurrentLocationBtn.disabled = false;
+      useCurrentLocationBtn.textContent = "📍 Взяти поточні координати";
+    },
+    (err) => {
+      alert("Не вдалося отримати координати: " + err.message);
+      useCurrentLocationBtn.disabled = false;
+      useCurrentLocationBtn.textContent = "📍 Взяти поточні координати";
+    },
+    { enableHighAccuracy: true, timeout: 10000 },
+  );
+});
+
 if (saveBtn) {
   saveBtn.addEventListener("click", (e) => {
     e.preventDefault();
@@ -497,7 +543,7 @@ async function init() {
       draft.story ??= { pages: [] };
       draft.comic ??= { scenes: [] };
       draft.game ??= { buildFolder: "", lockedUntil: "story", geo: null };
-      draft.rewards ??= { xp: 0, coins: 0, crystals: 0 };
+      draft.rewards ??= { xp: 0, coins: 0 };
       document.getElementById("editorTitle").textContent = "Редагування квесту";
     }
   }
