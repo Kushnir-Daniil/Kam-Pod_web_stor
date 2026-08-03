@@ -5,22 +5,117 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Профіль</title>
   <link rel="stylesheet" href="css/user.css">
+  <link rel="stylesheet" href="css/profile.css">
 </head>
 <body>
 
     <div class="page-container">
-        <div class="coin-badge">
-            <img src="../img/coin1.png" alt="">
-            <span id="globalCoinBadge">—</span>
-            <small>монети</small>
+
+        <div class="page-header">
+            <div>
+                <h1>Профіль</h1>
+            </div>
+            <div class="header-right">
+                <div class="coin-badge">
+                    <img src="../img/coin1.png" alt="">
+                    <span id="globalCoinBadge">—</span>
+                    <small>монети</small>
+                </div>
+                <button type="button" class="settings-btn" id="settingsBtn">⚙</button>
+            </div>
         </div>
 
-        <div class="profile-stats-card">
-            <p><strong id="profileXp">—</strong> XP</p>
-            <p><strong id="profileCompletedCount">—</strong> квестів пройдено</p>
+        <!-- Картка користувача -->
+        <div class="profile-user-card">
+            <img src="../img/person.png" class="profile-avatar" alt="">
+            <div class="profile-user-info">
+                <h2 id="profileName">—</h2>
+                <p id="profileUsername" class="profile-username">—</p>
+                <p id="profileEmail" class="profile-email">
+                    <span id="profileEmailText">—</span>
+                    <button type="button" id="copyEmailBtn" class="copy-btn" title="Скопіювати">⧉</button>
+                </p>
+                <span class="badge-novice" id="profileLevelBadge">НОВАЧОК</span>
+            </div>
         </div>
 
-        <p class="page-placeholder">Сторінка профілю (в розробці)</p>
+        <!-- XP прогрес -->
+        <div class="xp-card">
+            <div class="xp-labels">
+                <span id="xpCurrent">0 ХР</span>
+                <span id="xpNext">—</span>
+            </div>
+            <div class="xp-bar-track">
+                <div class="xp-bar-fill" id="xpBarFill" style="width:0%"></div>
+            </div>
+        </div>
+
+        <!-- Щоденник пригод -->
+        <a href="#" class="profile-row-card" id="diaryCard">
+            <img src="../img/book1.png" class="row-card-icon" alt="">
+            <div class="row-card-body">
+                <div class="row-card-title-line">
+                    <strong>Щоденник пригод</strong>
+                </div>
+                <p id="diarySummary">0 спогадів · 0 міст</p>
+            </div>
+            <img src="../img/arrow.png" class="row-card-arrow" alt="">
+        </a>
+
+        <!-- Статистика -->
+        <div class="stats-row">
+            <div class="stat-box">
+                <img src="../img/Flag2.png" alt="">
+                <strong id="statQuests">0</strong>
+                <span>Квестів пройдено</span>
+            </div>
+            <div class="stat-box">
+                <img src="../img/stickman.png" alt="">
+                <strong id="statKm">0.0 км</strong>
+                <span>Пройдено пішки</span>
+            </div>
+            <div class="stat-box">
+                <img src="../img/Geopin.png" alt="">
+                <strong id="statLocations">0</strong>
+                <span>Місць відкрито</span>
+            </div>
+        </div>
+
+        <!-- Абонемент -->
+        <button type="button" class="profile-row-card" id="subscriptionCard">
+            <img src="../img/ticket.png" class="row-card-icon" alt="">
+            <div class="row-card-body">
+                <strong>Придбати 3-денний абонемент</strong>
+                <p>Грай у будь-який квест, будь-де</p>
+            </div>
+            <img src="../img/arrow.png" class="row-card-arrow" alt="">
+        </button>
+
+        <!-- Здобувай монети -->
+        <p class="section-label">ЗДОБУВАЙ МОНЕТИ</p>
+        <div class="earn-coins-row">
+            <button type="button" class="earn-coin-box" id="giftSubBtn">
+                <img src="../img/giftbox.png" alt="">
+                <span class="earn-badge">+50</span>
+                <p>Подаруй абонемент</p>
+            </button>
+            <button type="button" class="earn-coin-box" id="suggestLocationBtn">
+                <img src="../img/Geopin.png" alt="">
+                <span class="earn-badge">+50</span>
+                <p>Запропонуй локацію</p>
+            </button>
+        </div>
+
+        <!-- Виклики -->
+        <button type="button" class="profile-row-card" id="challengesCard">
+            <img src="../img/Flag1.png" class="row-card-icon row-card-icon--purple" alt="">
+            <div class="row-card-body">
+                <strong>Виклики</strong>
+                <p>Дивись, хто кинув тобі виклик і перевершив свій результат</p>
+            </div>
+            <img src="../img/arrow.png" class="row-card-arrow" alt="">
+        </button>
+
         <button type="button" id="logoutBtn" class="btn-logout">Вийти</button>
     </div>
 

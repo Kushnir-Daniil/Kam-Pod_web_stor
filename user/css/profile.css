@@ -1,0 +1,246 @@
+/* ===== Верхній рядок (монети + шестерня) ===== */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-card-bg);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* ===== Картка користувача ===== */
+.profile-user-card {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card, 20px);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.profile-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--color-bg);
+}
+
+.profile-user-info h2 {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.profile-username {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.profile-email {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-primary-dark);
+  margin-top: 4px;
+}
+
+.copy-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.badge-novice {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  background: var(--color-border);
+  color: var(--color-primary-dark);
+  padding: 4px 10px;
+  border-radius: 10px;
+}
+
+/* ===== XP ===== */
+.xp-card {
+  margin-bottom: 14px;
+}
+
+.xp-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+
+.xp-labels span:first-child {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.xp-bar-track {
+  width: 100%;
+  height: 8px;
+  background: var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.xp-bar-fill {
+  height: 100%;
+  background: var(--color-primary);
+}
+
+/* ===== Рядок-картка (щоденник / абонемент / виклики) ===== */
+.profile-row-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card, 20px);
+  padding: 14px;
+  margin-bottom: 14px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.row-card-icon {
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--color-border);
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.row-card-icon--purple {
+  background: #E7DFF7;
+}
+
+.row-card-body {
+  flex: 1;
+}
+
+.row-card-body strong {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.row-card-body p {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.row-card-arrow {
+  width: 14px;
+  height: 14px;
+  opacity: 0.4;
+  flex-shrink: 0;
+}
+
+/* ===== Статистика (3 картки) ===== */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.stat-box {
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 12px 8px;
+  text-align: center;
+}
+
+.stat-box img {
+  width: 20px;
+  height: 20px;
+  margin-bottom: 6px;
+}
+
+.stat-box strong {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 2px;
+}
+
+.stat-box span {
+  font-size: 9px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+/* ===== Здобувай монети ===== */
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  margin: 6px 0 8px;
+}
+
+.earn-coins-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.earn-coin-box {
+  position: relative;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 14px 10px;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.earn-coin-box img {
+  width: 22px;
+  height: 22px;
+}
+
+.earn-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(76, 175, 109, 0.15);
+  color: #2f7a4a;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.earn-coin-box p {
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
