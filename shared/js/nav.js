@@ -2,8 +2,11 @@ import {
   getCurrentRole,
   canAccessAdminPanel,
   canAccessKazkarPanel,
+  getCurrentUser,
   ROLES,
 } from "./data/usersData.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+import { db } from "./firebase.js";
 
 const NAV_ITEMS = [
   { page: "home.html", icon: "house.png", label: "Головна", path: "../user/home.html" },
@@ -44,7 +47,6 @@ function renderNav() {
     items.push(KAZKAR_ITEM);
   }
 
-  // quest.html також підсвічує вкладку «Квести»
   const activePage = currentPage === "quest.html" ? "quests.html" : currentPage;
 
   const html = items.map((item) => {
@@ -68,4 +70,24 @@ function renderNav() {
   placeholder.innerHTML = `<nav class="bottom-nav">${html}</nav>`;
 }
 
+/** Оновлює бейдж монет скрізь, де на сторінці є #globalCoinBadge */
+async function renderCoinBadge() {
+  const badge = document.getElementById("globalCoinBadge");
+  if (!badge) return;
+
+  const user = getCurrentUser();
+  if (!user) return;
+
+  try {
+    const snap = await getDoc(doc(db, "users", user.id));
+    const coins = snap.exists() ? (snap.data().coins ?? 0) : 0;
+    badge.textContent = coins;
+  } catch (err) {
+    console.error("Не вдалося завантажити монети:", err);
+  }
+}
+
 renderNav();
+renderCoinBadge();
+
+export { renderCoinBadge };

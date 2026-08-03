@@ -9,7 +9,17 @@
 <body>
 
     <div class="page-container">
-        
+        <div class="coin-badge">
+            <img src="../img/coin1.png" alt="">
+            <span id="globalCoinBadge">—</span>
+            <small>монети</small>
+        </div>
+
+        <div class="profile-stats-card">
+            <p><strong id="profileXp">—</strong> XP</p>
+            <p><strong id="profileCompletedCount">—</strong> квестів пройдено</p>
+        </div>
+
         <p class="page-placeholder">Сторінка профілю (в розробці)</p>
         <button type="button" id="logoutBtn" class="btn-logout">Вийти</button>
     </div>
@@ -18,5 +28,6 @@
 
     <script type="module" src="../shared/js/nav.js"></script>
     <script type="module" src="js/user.js"></script>
+    <script type="module" src="js/profile.js"></script>
 </body>
 </html>
