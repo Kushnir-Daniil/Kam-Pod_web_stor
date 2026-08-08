@@ -181,6 +181,10 @@
   background: #E7DFF7;
 }
 
+.row-card-icon--orange {
+  background: #FBE1BC;
+}
+
 .row-card-body {
   flex: 1;
 }
@@ -225,6 +229,34 @@
   margin-bottom: 6px;
 }
 
+.stat-icon-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 8px;
+}
+
+.stat-icon-circle img {
+  width: 20px;
+  height: 20px;
+  margin-bottom: 0;
+}
+
+.stat-icon-circle--level {
+  background: #FCEFD1;
+}
+
+.stat-icon-circle--km {
+  background: #DCEEDD;
+}
+
+.stat-icon-circle--places {
+  background: #F6DCDC;
+}
+
 .stat-box strong {
   display: block;
   font-size: 15px;
@@ -267,6 +299,28 @@
 .earn-coin-box img {
   width: 22px;
   height: 22px;
+}
+
+.earn-icon-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.earn-icon-circle img {
+  width: 18px;
+  height: 18px;
+}
+
+.earn-icon-circle--gift {
+  background: #FBDEE3;
+}
+
+.earn-icon-circle--location {
+  background: #DCEAF7;
 }
 
 .earn-badge {
@@ -390,9 +444,7 @@
 }
 
 .stat-icon-emoji {
-  display: block;
-  font-size: 20px;
-  margin-bottom: 6px;
+  font-size: 18px;
 }
 
 /* ===== Модалка налаштувань ===== */
