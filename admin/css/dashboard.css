@@ -1,0 +1,256 @@
+.dash-crown {
+  font-size: 18px;
+  vertical-align: middle;
+}
+
+/* ===== Заголовки секцій (дублюємо з profile.css, бо ця сторінка його не підключає) ===== */
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  margin: 6px 0 8px;
+}
+
+.section-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.section-label-link {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ===== Загальна статистика (градієнтна картка) ===== */
+.dash-stats-card {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  border-radius: 20px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.dash-stats-label {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.dash-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.dash-stat-tile {
+  background: #fff;
+  border-radius: 14px;
+  padding: 10px 6px;
+  text-align: center;
+}
+
+.dash-stat-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  margin: 0 auto 6px;
+}
+
+.dash-stat-icon--blue { background: #DCEAF7; }
+.dash-stat-icon--green { background: #DCEEDD; }
+.dash-stat-icon--purple { background: #EAE0F5; }
+.dash-stat-icon--orange { background: #FBE1BC; }
+
+.dash-stat-tile strong {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 2px;
+}
+
+.dash-stat-tile span {
+  font-size: 8px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+/* ===== Швидкі дії ===== */
+.dash-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.dash-action-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 12px 6px;
+  text-decoration: none;
+  color: var(--color-text);
+  font-family: inherit;
+  cursor: pointer;
+  text-align: center;
+}
+
+.dash-action-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #fff;
+}
+
+.dash-action-icon--orange { background: var(--color-primary); }
+.dash-action-icon--green { background: #4CAF6D; }
+.dash-action-icon--purple { background: #9B6FD6; }
+
+.dash-action-tile span {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* ===== Картки "Остання активність" / "Топ користувачів" ===== */
+.dash-card {
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.dash-card .section-label {
+  margin: 0;
+}
+
+/* ===== Рядок активності ===== */
+.dash-activity-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dash-activity-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.dash-activity-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.dash-activity-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-activity-body strong {
+  display: block;
+  font-size: 13px;
+}
+
+.dash-activity-body p {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-activity-time {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+/* ===== Рядок лідерборду ===== */
+.dash-leaderboard-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dash-leaderboard-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.dash-rank {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.dash-rank--gold { background: #E0A72B; }
+.dash-rank--silver { background: #A9A9A9; }
+.dash-rank--bronze { background: #C97A3D; }
+
+.dash-leaderboard-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+
+.dash-leaderboard-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-leaderboard-body strong {
+  display: block;
+  font-size: 13px;
+}
+
+.dash-leaderboard-body p {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.dash-leaderboard-coins {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  flex-shrink: 0;
+}

@@ -7,6 +7,7 @@ import {
   saveQuestAsDraft,
 } from "../../shared/js/data/questsData.js";
 import { getCurrentUser } from "../../shared/js/data/usersData.js";
+import { logActivity, ACTIVITY_TYPES } from "../../shared/js/data/activityData.js";
 
 const params = new URLSearchParams(window.location.search);
 const editId = params.get("id");
@@ -275,6 +276,11 @@ async function persistQuest({ asDraft, asPublish }) {
       });
       history.replaceState(null, "", `quest-editor.html?id=${saved.id}`);
       document.getElementById("editorTitle").textContent = "Редагування квесту";
+      logActivity(
+        ACTIVITY_TYPES.QUEST_CREATED,
+        "Новий квест",
+        `Додано квест «${payload.title}»`,
+      ).catch((err) => console.error("Не вдалося записати активність:", err));
     }
 
     Object.assign(draft, saved);

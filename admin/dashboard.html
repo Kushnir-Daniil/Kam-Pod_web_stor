@@ -3,21 +3,92 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Адмін — Модерація</title>
+  <title>Адмін — Панель</title>
   <link rel="stylesheet" href="../user/css/user.css">
   <link rel="stylesheet" href="../user/css/quests.css">
   <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/dashboard.css">
 </head>
 <body>
 
     <div class="page-container">
+
         <div class="page-header">
             <div>
-                <h1>Адмін-панель</h1>
-                <p>Квести казкарів на розгляді</p>
+                <h1>Адмін панель <span class="dash-crown">👑</span></h1>
+                <p>Вітаємо, Адміністратор!</p>
             </div>
         </div>
 
+        <!-- Загальна статистика -->
+        <div class="dash-stats-card">
+            <p class="dash-stats-label">Загальна статистика</p>
+            <div class="dash-stats-grid">
+                <div class="dash-stat-tile">
+                    <div class="dash-stat-icon dash-stat-icon--blue">👥</div>
+                    <strong id="statUsers">—</strong>
+                    <span>Користувачів</span>
+                </div>
+                <div class="dash-stat-tile">
+                    <div class="dash-stat-icon dash-stat-icon--green">✅</div>
+                    <strong id="statQuests">—</strong>
+                    <span>Квестів</span>
+                </div>
+                <div class="dash-stat-tile">
+                    <div class="dash-stat-icon dash-stat-icon--purple">📖</div>
+                    <strong id="statStories">—</strong>
+                    <span>Історій</span>
+                </div>
+                <div class="dash-stat-tile">
+                    <div class="dash-stat-icon dash-stat-icon--orange">🪙</div>
+                    <strong id="statCoinsIssued">—</strong>
+                    <span>Монет видано</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Швидкі дії -->
+        <p class="section-label">ШВИДКІ ДІЇ</p>
+        <div class="dash-actions-grid">
+            <a href="quest-editor.html" class="dash-action-tile">
+                <div class="dash-action-icon dash-action-icon--orange">➕</div>
+                <span>Додати квест</span>
+            </a>
+            <button type="button" class="dash-action-tile" id="addUserBtn">
+                <div class="dash-action-icon dash-action-icon--green">👤</div>
+                <span>Додати користувача</span>
+            </button>
+            <button type="button" class="dash-action-tile" id="addStoryBtn">
+                <div class="dash-action-icon dash-action-icon--purple">📖</div>
+                <span>Додати історію</span>
+            </button>
+            <button type="button" class="dash-action-tile" id="rewardSettingsBtn">
+                <div class="dash-action-icon dash-action-icon--orange">🏅</div>
+                <span>Налаштування нагород</span>
+            </button>
+        </div>
+
+        <!-- Остання активність -->
+        <div class="dash-card">
+            <div class="section-label-row">
+                <p class="section-label">ОСТАННЯ АКТИВНІСТЬ</p>
+                <button type="button" class="section-label-link" id="viewAllActivityBtn">Переглянути все</button>
+            </div>
+            <div id="activityList"></div>
+        </div>
+
+        <!-- Топ користувачів -->
+        <div class="dash-card">
+            <div class="section-label-row">
+                <p class="section-label">ТОП КОРИСТУВАЧІВ</p>
+                <button type="button" class="section-label-link" id="viewAllUsersBtn">Переглянути все</button>
+            </div>
+            <div id="leaderboardList"></div>
+        </div>
+
+        <!-- Модерація (без змін — існуюча логіка) -->
+        <p class="section-label">МОДЕРАЦІЯ</p>
+        <p class="page-placeholder" style="margin: 0 0 12px; text-align: left;">Квести казкарів на розгляді</p>
         <div id="moderationQueue" class="moderation-queue">
             <p class="page-placeholder">Завантаження…</p>
         </div>
@@ -27,6 +98,7 @@
 
     <script type="module" src="../shared/js/nav.js"></script>
     <script type="module" src="js/admin.js"></script>
+    <script type="module" src="js/dashboard.js"></script>
     <script type="module" src="js/moderation.js"></script>
 </body>
 </html>
