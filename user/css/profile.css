@@ -407,6 +407,10 @@
   padding: 16px;
 }
 
+.modal-overlay[hidden] {
+  display: none;
+}
+
 .modal-card {
   background: var(--color-card-bg);
   border-radius: 20px;
