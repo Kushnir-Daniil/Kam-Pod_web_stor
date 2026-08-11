@@ -6,7 +6,7 @@ import {
   QUEST_STATUS,
   saveQuestAsDraft,
 } from "../../shared/js/data/questsData.js";
-import { getCurrentUser } from "../../shared/js/data/usersData.js";
+import { getCurrentUser, getCurrentRole, ROLES } from "../../shared/js/data/usersData.js";
 import { logActivity, ACTIVITY_TYPES } from "../../shared/js/data/activityData.js";
 
 const params = new URLSearchParams(window.location.search);
@@ -228,12 +228,17 @@ async function persistQuest({ asDraft, asPublish }) {
   }
 
   const currentUser = getCurrentUser();
+  const isAdminUser = getCurrentRole() === ROLES.ADMIN;
 
   if (asPublish) {
     const ok = confirm(
-      draft.status === QUEST_STATUS.PUBLISHED
-        ? "Квест зникне з каталогу гравців і знову піде на перевірку адміну. Продовжити?"
-        : "Надіслати квест адміну на перевірку?",
+      isAdminUser
+        ? draft.status === QUEST_STATUS.PUBLISHED
+          ? "Оновити опублікований квест?"
+          : "Опублікувати квест одразу на сайт (без черги модерації)?"
+        : draft.status === QUEST_STATUS.PUBLISHED
+          ? "Квест зникне з каталогу гравців і знову піде на перевірку адміну. Продовжити?"
+          : "Надіслати квест адміну на перевірку?",
     );
     if (!ok) return;
   } else if (draft.status === QUEST_STATUS.PUBLISHED) {
@@ -244,14 +249,23 @@ async function persistQuest({ asDraft, asPublish }) {
   }
 
   const targetStatus = asPublish
-    ? QUEST_STATUS.PENDING_REVIEW
+    ? isAdminUser
+      ? QUEST_STATUS.PUBLISHED
+      : QUEST_STATUS.PENDING_REVIEW
     : QUEST_STATUS.DRAFT;
+  const willBePublished = targetStatus === QUEST_STATUS.PUBLISHED;
+
   const payload = buildPayload(currentUser, targetStatus);
+  if (willBePublished) {
+    payload.publishedAt = new Date();
+  }
 
   saveBtn.disabled = true;
   if (publishQuestBtn) publishQuestBtn.disabled = true;
   saveBtn.textContent = "Збереження…";
-  if (publishQuestBtn && asPublish) publishQuestBtn.textContent = "Публікація…";
+  if (publishQuestBtn && asPublish) {
+    publishQuestBtn.textContent = isAdminUser ? "Публікація…" : "Надсилання…";
+  }
 
   try {
     let saved;
@@ -261,18 +275,18 @@ async function persistQuest({ asDraft, asPublish }) {
       } else {
         saved = await updateQuest(draft.id, {
           ...payload,
-          status: QUEST_STATUS.PENDING_REVIEW,
-          publishedAt: null,
-          reviewNote: "",
-          reviewedBy: null,
-          reviewedAt: null,
+          status: targetStatus,
+          publishedAt: willBePublished ? new Date() : null,
+          reviewNote: willBePublished ? draft.reviewNote || "" : "",
+          reviewedBy: willBePublished ? draft.reviewedBy || null : null,
+          reviewedAt: willBePublished ? draft.reviewedAt || null : null,
         });
       }
     } else {
       saved = await addQuest({
         ...payload,
         status: targetStatus,
-        publishedAt: null,
+        publishedAt: willBePublished ? new Date() : null,
       });
       history.replaceState(null, "", `quest-editor.html?id=${saved.id}`);
       document.getElementById("editorTitle").textContent = "Редагування квесту";
@@ -288,7 +302,7 @@ async function persistQuest({ asDraft, asPublish }) {
     if (draft.status !== targetStatus) {
       saved = await updateQuest(draft.id, {
         status: targetStatus,
-        publishedAt: null,
+        publishedAt: willBePublished ? new Date() : null,
       });
       Object.assign(draft, saved);
     }
@@ -296,8 +310,17 @@ async function persistQuest({ asDraft, asPublish }) {
     saveStatus.hidden = false;
     saveStatus.classList.remove("error");
     if (asPublish) {
-      saveStatus.textContent =
-        "Надіслано на перевірку (статус: На розгляді). Квест знято з каталогу.";
+      if (isAdminUser) {
+        saveStatus.textContent = "Опубліковано на сайті.";
+        logActivity(
+          ACTIVITY_TYPES.QUEST_PUBLISHED,
+          "Квест опубліковано",
+          `Опубліковано квест «${payload.title}»`,
+        ).catch((err) => console.error("Не вдалося записати активність:", err));
+      } else {
+        saveStatus.textContent =
+          "Надіслано на перевірку (статус: На розгляді). Квест знято з каталогу.";
+      }
     } else {
       saveStatus.textContent = "Збережено в чорнетці (статус: У чорнетці).";
     }

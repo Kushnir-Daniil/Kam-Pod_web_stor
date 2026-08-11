@@ -25,7 +25,7 @@ const KAZKAR_ITEM = {
 
 const ADMIN_ITEM = {
   page: "dashboard.html",
-  icon: "crown.svg",
+  icon: "shield.svg",
   label: "Адмін",
   path: "../admin/dashboard.html",
   panel: "admin",

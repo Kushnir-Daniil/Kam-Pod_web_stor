@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Адмін — Усі квести</title>
+  <link rel="stylesheet" href="../user/css/user.css">
+  <link rel="stylesheet" href="../user/css/quests.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+    <div class="page-container">
+        <div class="page-header">
+            <div>
+                <h1>Усі квести</h1>
+                <p>Будь-який статус, будь-який автор — для редагування нагород чи повернення до чорнетки</p>
+            </div>
+        </div>
+
+        <div class="quest-mode-tabs" role="tablist">
+            <button type="button" class="quest-mode-tab active" data-filter="all">Усі</button>
+            <button type="button" class="quest-mode-tab" data-filter="published">Опубліковані</button>
+            <button type="button" class="quest-mode-tab" data-filter="pending_review">На розгляді</button>
+            <button type="button" class="quest-mode-tab" data-filter="draft">Чорнетки</button>
+        </div>
+
+        <div id="allQuestsList" class="quest-list">
+            <p class="page-placeholder">Завантаження…</p>
+        </div>
+    </div>
+
+    <div id="nav-placeholder"></div>
+
+    <script type="module" src="../shared/js/nav.js"></script>
+    <script type="module" src="js/admin.js"></script>
+    <script type="module" src="js/all-quests.js"></script>
+</body>
+</html>

@@ -121,7 +121,7 @@ document.getElementById("addStoryBtn")?.addEventListener("click", () => {
 });
 
 document.getElementById("rewardSettingsBtn")?.addEventListener("click", () => {
-  alert("Редагування нагород уже доступне у конструкторі кожного квесту (вкладка «Мета»). Окремий загальний список квестів для адміна — в розробці.");
+  window.location.href = "all-quests.html";
 });
 
 document.getElementById("viewAllActivityBtn")?.addEventListener("click", () => {
