@@ -188,7 +188,7 @@ function renderMode(mode) {
   });
 }
 
-function bindGameResultListener() {
+function bindGameResultListener(closeOverlay) {
   if (window.__questGameMessageHandler) {
     window.removeEventListener("message", window.__questGameMessageHandler);
   }
@@ -211,6 +211,9 @@ function bindGameResultListener() {
           label.hidden = false;
           label.textContent = "Перемога! Нагороду нараховано.";
         }
+        // Автозакриття — тільки коли нагорода реально зарахована,
+        // щоб встиг побачити повідомлення про успіх перед закриттям.
+        setTimeout(() => closeOverlay(), 2000);
       } catch (err) {
         console.error("Не вдалося зарахувати нагороду за гру:", err);
         if (label) {
@@ -218,6 +221,7 @@ function bindGameResultListener() {
           label.textContent =
             "Перемога зарахована, але нагороду нарахувати не вдалося. Онови сторінку й спробуй ще раз, або повідом адміна.";
         }
+        // Оверлей навмисно НЕ закриваємо автоматично — щоб не пропустив помилку.
       }
       return;
     }
@@ -271,12 +275,14 @@ function openGameFullscreen(build) {
   document.body.appendChild(overlay);
   document.body.classList.add("quest-game-no-scroll");
 
-  document.getElementById("closeGameBtn")?.addEventListener("click", () => {
+  const closeOverlay = () => {
     overlay.remove();
     document.body.classList.remove("quest-game-no-scroll");
-  });
+  };
 
-  bindGameResultListener();
+  document.getElementById("closeGameBtn")?.addEventListener("click", closeOverlay);
+
+  bindGameResultListener(closeOverlay);
 }
 
 tabs.forEach((tab) => {
