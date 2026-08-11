@@ -58,6 +58,24 @@ service cloud.firestore {
         && request.resource.data.get('isAdmin', false) == (roleOf(resource.data) == 'admin');
 
       allow update, delete: if isAdmin();
+
+      // ----- users/{userId}/questProgress (прогрес проходження квестів) -----
+      // Без цього блоку markPartCompleted() у progressData.js падав з permission-denied,
+      // і нагорода (XP/монети) ніколи не нараховувалась.
+      match /questProgress/{questId} {
+        allow read, write: if signedIn() && (request.auth.uid == userId || isAdmin());
+      }
+
+      // ----- users/{userId}/manualAchievements (ачивки, видані адміном вручну) -----
+      match /manualAchievements/{achievementId} {
+        allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+        allow write: if isAdmin();
+      }
+
+      // ----- users/{userId}/achievementProgress (коли розблоковано/переглянуто) -----
+      match /achievementProgress/{achievementId} {
+        allow read, write: if signedIn() && (request.auth.uid == userId || isAdmin());
+      }
     }
 
     // ----- quests (спільна колекція) -----
@@ -84,7 +102,7 @@ service cloud.firestore {
         && request.resource.data.status in ['draft', 'pending_review', 'rejected', 'archived']
         && request.resource.data.status != 'published';
 
-      // Адмін: погодити / відхилити / будь-яка правка
+      // Адмін: погодити / відхилити / будь-яка правка (включно з прямою публікацією)
       allow update: if isAdmin();
 
       allow delete: if isAdmin()
@@ -106,6 +124,25 @@ service cloud.firestore {
         && request.resource.data.usedCount == resource.data.usedCount + 1;
 
       allow create, delete: if isAdmin();
+    }
+
+    // ----- activityLog (стрічка активності на адмін-дашборді) -----
+    match /activityLog/{eventId} {
+      allow read: if isAdmin();
+      allow create: if signedIn();
+      allow update, delete: if false;
+    }
+
+    // ----- achievements (визначення ачивментів, створює адмін) -----
+    match /achievements/{achievementId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // ----- news (новини на Головній, створює адмін) -----
+    match /news/{newsId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
     }
   }
 }

@@ -5,17 +5,63 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Головна</title>
   <link rel="stylesheet" href="css/user.css">
+  <link rel="stylesheet" href="css/home.css">
 </head>
 <body>
 
     <div class="page-container">
-        
-        <p class="page-placeholder">Головна сторінка (в розробці)</p>
+
+        <div class="page-header">
+            <div>
+                <h1>Головна</h1>
+                <p>Ласкаво просимо у світ пригод!</p>
+            </div>
+            <div class="header-right">
+                <div class="coin-badge">
+                    <img src="../img/coin1.png" alt="">
+                    <span id="globalCoinBadge">—</span>
+                    <small>монети</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Продовжуй квест -->
+        <a href="quests.html" id="continueQuestCard" class="continue-quest-card">
+            <div class="continue-quest-content">
+                <span class="continue-quest-tag" id="continueQuestTag">Продовжуй квест</span>
+                <h2 id="continueQuestTitle">—</h2>
+                <p id="continueQuestDesc"></p>
+                <span class="btn-continue" id="continueQuestBtn">Продовжити</span>
+            </div>
+            <img id="continueQuestImage" class="continue-quest-image" src="../img/tower.png" alt="">
+        </a>
+
+        <!-- Останні історії -->
+        <p class="section-label">ОСТАННІ ІСТОРІЇ</p>
+        <div class="recent-stories-row" id="recentStoriesRow">
+            <p class="page-placeholder">Завантаження…</p>
+        </div>
+
+        <!-- Новини -->
+        <p class="section-label">НОВИНИ</p>
+        <div id="newsList">
+            <p class="page-placeholder">Завантаження…</p>
+        </div>
+
+        <!-- Підписка Преміум -->
+        <div class="premium-banner">
+            <span class="premium-icon">👑</span>
+            <div class="premium-body">
+                <strong>Підписка Преміум</strong>
+                <p>Відкривай ексклюзивні історії, отримуй більше монет та прибери рекламу</p>
+            </div>
+            <button type="button" class="btn-premium" id="premiumBtn">Дізнатись більше</button>
+        </div>
     </div>
 
     <div id="nav-placeholder"></div>
 
     <script type="module" src="../shared/js/nav.js"></script>
-    <script type="module" src="js/user.js"></script>    
+    <script type="module" src="js/home.js"></script>
 </body>
 </html>
