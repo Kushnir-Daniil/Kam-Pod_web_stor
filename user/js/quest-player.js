@@ -109,7 +109,9 @@ function renderMode(mode) {
         storyIndex += 1;
         renderMode("story");
       } else {
-        await markPartCompleted(quest, "story").catch(console.error);
+        await markPartCompleted(quest, "story").catch((err) =>
+          console.error("Не вдалося зарахувати проходження історії:", err),
+        );
         renderMode((quest.comic?.scenes || []).length ? "comic" : "game");
       }
     });
@@ -151,7 +153,9 @@ function renderMode(mode) {
         comicIndex += 1;
         renderMode("comic");
       } else {
-        await markPartCompleted(quest, "comic").catch(console.error);
+        await markPartCompleted(quest, "comic").catch((err) =>
+          console.error("Не вдалося зарахувати проходження коміксу:", err),
+        );
         renderMode("game");
       }
     });
@@ -195,13 +199,26 @@ function bindGameResultListener() {
     if (!data || data.type !== "kamianets-deer") return;
 
     const label = document.getElementById("gameResultLabel");
+
     if (data.status === "completed") {
-      if (label) {
-        label.hidden = false;
-        label.textContent = "Перемога! Нагороду нараховано.";
-      }
       saveQuestProgress(100);
-      await markPartCompleted(quest, "game").catch(console.error);
+      // Показуємо результат ЛИШЕ після реальної спроби зарахувати нагороду —
+      // раніше повідомлення про успіх з'являлось одразу, незалежно від того,
+      // чи вдався запис у Firestore.
+      try {
+        await markPartCompleted(quest, "game");
+        if (label) {
+          label.hidden = false;
+          label.textContent = "Перемога! Нагороду нараховано.";
+        }
+      } catch (err) {
+        console.error("Не вдалося зарахувати нагороду за гру:", err);
+        if (label) {
+          label.hidden = false;
+          label.textContent =
+            "Перемога зарахована, але нагороду нарахувати не вдалося. Онови сторінку й спробуй ще раз, або повідом адміна.";
+        }
+      }
       return;
     }
 
