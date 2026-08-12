@@ -1,0 +1,274 @@
+/* ===== Заголовок (локальні копії з profile.css — сторінка їх не підключає) ===== */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.page-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.page-header p {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.coin-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.coin-badge img {
+  width: 18px;
+  height: 18px;
+}
+
+.coin-badge small {
+  color: var(--color-text-muted);
+  font-weight: 400;
+  font-size: 10px;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  margin: 16px 0 8px;
+}
+
+.section-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.section-label-link {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ===== Перемикач Таблиця лідерів / Мої виклики ===== */
+.comm-toggle-row {
+  display: flex;
+  gap: 8px;
+  background: var(--color-border);
+  border-radius: 16px;
+  padding: 4px;
+  margin-bottom: 14px;
+}
+
+.comm-toggle {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 10px;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.comm-toggle.active {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* ===== Фільтри ===== */
+.comm-filter-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.comm-filter-pill {
+  border: 1px solid var(--color-border);
+  background: var(--color-card-bg);
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.comm-filter-pill.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.comm-filter-pill--dropdown {
+  margin-left: auto;
+}
+
+/* ===== Картка-контейнер (лідерборд/друзі) ===== */
+.comm-card {
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 8px 16px;
+  margin-bottom: 10px;
+}
+
+/* ===== Рядок лідерборду / друга ===== */
+.comm-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.comm-row:last-child {
+  border-bottom: none;
+}
+
+.comm-rank {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  background: var(--color-border);
+}
+
+.comm-rank--gold { background: #E0A72B; }
+.comm-rank--silver { background: #A9A9A9; }
+.comm-rank--bronze { background: #C97A3D; }
+.comm-rank--plain {
+  background: none;
+  color: var(--color-text-muted);
+}
+
+.comm-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+
+.comm-row-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.comm-row-body strong {
+  font-size: 14px;
+}
+
+.comm-level-chip {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  background: var(--color-border);
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.comm-xp {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.comm-view-all-btn {
+  display: block;
+  width: 100%;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+/* ===== Запроси друзів ===== */
+.invite-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--color-border);
+  border-radius: 18px;
+  padding: 14px;
+  margin: 16px 0;
+}
+
+.invite-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.invite-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.invite-body strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.invite-body p {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.btn-invite {
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
+}

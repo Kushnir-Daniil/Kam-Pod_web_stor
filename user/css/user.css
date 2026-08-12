@@ -1,12 +1,12 @@
 /* ===== CSS Variables (та сама дизайн-система) ===== */
 :root {
-  --color-bg: #FCF7F3;
-  --color-primary: #F09338;
-  --color-primary-dark: #A55D13;
-  --color-card-bg: #FFFFFF;
+  --color-bg: #FAEEE4;
+  --color-primary: #EF9D38;
+  --color-primary-dark: #DD8228;
+  --color-card-bg: #FCF4EE;
   --color-text: #2E2A26;
   --color-text-muted: #8A8078;
-  --color-border: #EAE0D5;
+  --color-border: #F3E5D8;
 
   --font-main: 'Poppins', 'Segoe UI', sans-serif;
 }

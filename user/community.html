@@ -5,16 +5,70 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Спільнота</title>
   <link rel="stylesheet" href="css/user.css">
+  <link rel="stylesheet" href="css/community.css">
 </head>
 <body>
 
     <div class="page-container">
-        <p class="page-placeholder">Сторінка спільноти (в розробці)</p>
+
+        <div class="page-header">
+            <div>
+                <h1>Спільнота</h1>
+                <p>Друзі, лідери та живі виклики в одному місці.</p>
+            </div>
+            <div class="header-right">
+                <div class="coin-badge">
+                    <img src="../img/coin1.png" alt="">
+                    <span id="globalCoinBadge">—</span>
+                    <small>монети</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Перемикач: Таблиця лідерів / Мої виклики -->
+        <div class="comm-toggle-row">
+            <button type="button" class="comm-toggle active" id="leaderboardToggle">🏆 Таблиця лідерів</button>
+            <button type="button" class="comm-toggle" id="challengesToggle">⚔️ Мої виклики</button>
+        </div>
+
+        <!-- Фільтри -->
+        <div class="comm-filter-row">
+            <button type="button" class="comm-filter-pill active" data-scope="all">Усі</button>
+            <button type="button" class="comm-filter-pill" data-scope="friends">Друзі</button>
+            <button type="button" class="comm-filter-pill comm-filter-pill--dropdown" id="periodFilter">За тиждень ▾</button>
+        </div>
+
+        <!-- Таблиця лідерів -->
+        <div id="leaderboardSection">
+            <div class="comm-card" id="leaderboardList">
+                <p class="page-placeholder">Завантаження…</p>
+            </div>
+            <button type="button" class="comm-view-all-btn" id="viewFullRankingBtn">📊 Переглянути повний рейтинг</button>
+        </div>
+
+        <!-- Друзі -->
+        <div class="section-label-row">
+            <p class="section-label">ДРУЗІ</p>
+            <button type="button" class="section-label-link" id="viewAllFriendsBtn">Переглянути всіх</button>
+        </div>
+        <div class="comm-card" id="friendsList">
+            <p class="page-placeholder">У тебе поки немає доданих друзів.</p>
+        </div>
+
+        <!-- Запроси друзів -->
+        <div class="invite-banner">
+            <span class="invite-icon">🐲🦌</span>
+            <div class="invite-body">
+                <strong>Запроси друзів!</strong>
+                <p>Разом проходити квести ще цікавіше!</p>
+            </div>
+            <button type="button" class="btn-invite" id="inviteFriendsBtn">Запросити</button>
+        </div>
     </div>
 
     <div id="nav-placeholder"></div>
 
     <script type="module" src="../shared/js/nav.js"></script>
-    <script type="module" src="js/user.js"></script>    
+    <script type="module" src="js/community.js"></script>
 </body>
 </html>
