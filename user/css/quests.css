@@ -45,6 +45,7 @@
   display: flex;
   gap: 6px;
   margin-bottom: 14px;
+  position: relative;
 }
 
 .tab-btn {
@@ -66,6 +67,51 @@
   background: var(--color-primary);
   color: #fff;
   border-color: var(--color-primary);
+}
+
+/* ===== Дропдаун "Налаштування пошуку квестів" — спливає під кнопкою "Фільтри" ===== */
+.filter-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 4px;
+  box-shadow: 0 8px 20px rgba(46, 42, 38, 0.16);
+  z-index: 30;
+}
+
+.filter-panel[hidden] {
+  display: none;
+}
+
+.filter-pill {
+  border: none;
+  background: none;
+  text-align: left;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.filter-pill.active {
+  background: rgba(239, 157, 56, 0.16);
+  color: var(--color-primary-dark);
+}
+
+.filter-hint {
+  padding: 2px 8px 1px;
+  font-size: 9px;
+  color: var(--color-text-muted);
+  white-space: normal;
 }
 
 /* ===== Пошук + фільтр ===== */
