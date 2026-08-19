@@ -1,6 +1,7 @@
 import { getQuestById, QUEST_STATUS, isPublished } from "../../shared/js/data/questsData.js";
 import { getCurrentUser, canAccessAdminPanel } from "../../shared/js/data/usersData.js";
 import { markPartCompleted } from "../../shared/js/data/progressData.js";
+import { getCurrentPosition, distanceMeters, recordQuestDistance } from "../../shared/js/data/distanceData.js";
 
 const params = new URLSearchParams(window.location.search);
 const questId = params.get("id");
@@ -14,6 +15,26 @@ let quest = null;
 let currentMode = "story";
 let storyIndex = 0;
 let comicIndex = 0;
+
+// Точка А — позиція користувача на момент відкриття квесту.
+// Якщо дозволу нема чи геолокація недоступна — просто лишається null,
+// і відстань за цей квест ніколи не запишеться (без помилок і алертів).
+let startPosition = null;
+
+/** Точка Б: фіксується лише в момент реального завершення квесту (justCompleted). */
+async function recordDistanceIfCompleted(result) {
+  if (!result?.justCompleted || !startPosition || !quest?.id) return;
+  const user = getCurrentUser();
+  if (!user?.id) return;
+
+  try {
+    const endPosition = await getCurrentPosition();
+    const meters = distanceMeters(startPosition, endPosition);
+    await recordQuestDistance(user.id, quest.id, meters);
+  } catch (err) {
+    console.error("Не вдалося зафіксувати пройдену відстань:", err);
+  }
+}
 
 const PROGRESS_KEY = "questProgressByUser";
 
@@ -109,9 +130,11 @@ function renderMode(mode) {
         storyIndex += 1;
         renderMode("story");
       } else {
-        await markPartCompleted(quest, "story").catch((err) =>
-          console.error("Не вдалося зарахувати проходження історії:", err),
-        );
+        const result = await markPartCompleted(quest, "story").catch((err) => {
+          console.error("Не вдалося зарахувати проходження історії:", err);
+          return null;
+        });
+        await recordDistanceIfCompleted(result);
         renderMode((quest.comic?.scenes || []).length ? "comic" : "game");
       }
     });
@@ -153,9 +176,11 @@ function renderMode(mode) {
         comicIndex += 1;
         renderMode("comic");
       } else {
-        await markPartCompleted(quest, "comic").catch((err) =>
-          console.error("Не вдалося зарахувати проходження коміксу:", err),
-        );
+        const result = await markPartCompleted(quest, "comic").catch((err) => {
+          console.error("Не вдалося зарахувати проходження коміксу:", err);
+          return null;
+        });
+        await recordDistanceIfCompleted(result);
         renderMode("game");
       }
     });
@@ -206,7 +231,8 @@ function bindGameResultListener(closeOverlay) {
       // раніше повідомлення про успіх з'являлось одразу, незалежно від того,
       // чи вдався запис у Firestore.
       try {
-        await markPartCompleted(quest, "game");
+        const result = await markPartCompleted(quest, "game");
+        await recordDistanceIfCompleted(result);
         if (label) {
           label.hidden = false;
           label.textContent = "Перемога! Нагороду нараховано.";
@@ -312,6 +338,16 @@ getQuestById(questId).then((loaded) => {
     stepEl.textContent = `${quest.type || "Квест"}${quest.duration ? ` · ${quest.duration}` : ""}${statusHint}`;
     document.title = quest.title || "Квест";
     saveQuestProgress(5);
+
+    // Точка А — фіксуємо мовчки одразу при відкритті квесту.
+    // Якщо юзер не дасть дозвіл на геолокацію — просто нічого не запишеться.
+    getCurrentPosition()
+      .then((pos) => {
+        startPosition = pos;
+      })
+      .catch(() => {
+        /* немає дозволу чи геолокація недоступна — км за цей квест не рахуються */
+      });
   } else {
     titleEl.textContent = "Квест не знайдено";
   }

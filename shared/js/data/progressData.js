@@ -13,7 +13,7 @@ import { db, auth } from "../firebase.js";
  * Прогрес зберігається в users/{uid}/questProgress/{questId}
  * {
  *   questId, storyCompleted, comicCompleted, gameCompleted,
- *   rewardGranted, completedAt, startedAt
+ *   rewardGranted, completedAt, startedAt, distanceMeters
  * }
  */
 
@@ -58,6 +58,11 @@ function isFullyCompleted(required, progress) {
 /**
  * Позначає частину квесту пройденою. Якщо після цього всі потрібні
  * частини завершені і нагорода ще не видана — нараховує XP/монети.
+ *
+ * Повертає { ...payload, justCompleted } — justCompleted true лише тоді,
+ * коли САМЕ ЦЕЙ виклик завершив квест повністю (а не повторний виклик
+ * уже завершеного квесту). Використовується для запису пройденої відстані
+ * (точка Б фіксується лише один раз, у момент реального завершення).
  */
 export async function markPartCompleted(quest, part) {
   const uid = auth.currentUser?.uid;
@@ -78,6 +83,7 @@ export async function markPartCompleted(quest, part) {
 
   const required = requiredParts(quest);
   const done = isFullyCompleted(required, updated);
+  const justCompleted = done && !existing.rewardGranted;
 
   const payload = {
     ...updated,
@@ -86,12 +92,12 @@ export async function markPartCompleted(quest, part) {
 
   await setDoc(progressRef(uid, quest.id), payload, { merge: true });
 
-  if (done && !existing.rewardGranted) {
+  if (justCompleted) {
     await grantRewards(uid, quest);
     await setDoc(progressRef(uid, quest.id), { rewardGranted: true }, { merge: true });
   }
 
-  return payload;
+  return { ...payload, justCompleted };
 }
 
 async function grantRewards(uid, quest) {

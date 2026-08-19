@@ -100,8 +100,9 @@ async function loadProfile() {
     document.getElementById("diarySummary").textContent =
       `${completedCount} спогадів · ${cities.size} міст`;
 
-    // Кілометри поки не рахуються — окрема задача (немає механізму трекінгу)
-    document.getElementById("statKm").textContent = "0.0 км";
+    // Пройдена відстань — сума "точка А → точка Б" за кожен пройдений квест
+    const totalMeters = data.totalDistanceMeters ?? 0;
+    document.getElementById("statKm").textContent = `${(totalMeters / 1000).toFixed(1)} км`;
 
     // ===== Досягнення =====
     const stats = { completedQuests: completedCount, uniquePlaces: cities.size, levelIndex };
