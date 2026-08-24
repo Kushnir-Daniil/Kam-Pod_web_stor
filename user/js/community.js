@@ -21,17 +21,17 @@ function escapeText(value) {
   return String(value ?? "").replaceAll("<", "&lt;");
 }
 
-function rankClass(i) {
-  if (i === 0) return "gold";
-  if (i === 1) return "silver";
-  if (i === 2) return "bronze";
-  return "plain";
+function rankMarkup(i) {
+  if (i === 0) return `<img src="../img/rank-gold.png" class="comm-rank-medal" alt="1 місце">`;
+  if (i === 1) return `<img src="../img/rank-silver.png" class="comm-rank-medal" alt="2 місце">`;
+  if (i === 2) return `<img src="../img/rank-bronze.png" class="comm-rank-medal" alt="3 місце">`;
+  return `<span class="comm-rank comm-rank--plain">${i + 1}</span>`;
 }
 
 async function loadLeaderboard() {
   const list = document.getElementById("leaderboardList");
   try {
-    const q = query(collection(db, "users"), orderBy("xp", "desc"), limit(10));
+    const q = query(collection(db, "users"), orderBy("xp", "desc"), limit(5));
     const snap = await getDocs(q);
 
     if (snap.empty) {
@@ -43,10 +43,9 @@ async function loadLeaderboard() {
       .map((d, i) => {
         const data = d.data();
         const xp = data.xp ?? 0;
-        const cls = rankClass(i);
         return `
           <div class="comm-row">
-            <span class="comm-rank comm-rank--${cls}">${i + 1}</span>
+            ${rankMarkup(i)}
             <img src="../img/person.png" class="comm-avatar" alt="">
             <div class="comm-row-body">
               <strong>${escapeText(data.name || "Без імені")}</strong>

@@ -165,12 +165,16 @@
   background: var(--color-border);
 }
 
-.comm-rank--gold { background: #E0A72B; }
-.comm-rank--silver { background: #A9A9A9; }
-.comm-rank--bronze { background: #C97A3D; }
 .comm-rank--plain {
   background: none;
   color: var(--color-text-muted);
+}
+
+.comm-rank-medal {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .comm-avatar {
