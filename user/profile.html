@@ -133,10 +133,18 @@
         <button type="button" id="logoutBtn" class="btn-logout">Вийти</button>
     </div>
 
-    <!-- Модалка налаштувань (редагування локації) -->
+    <!-- Модалка налаштувань (редагування профілю) -->
     <div class="modal-overlay" id="settingsModal" hidden>
         <div class="modal-card">
             <h3>Налаштування профілю</h3>
+            <label class="modal-field">
+                <span>Ім'я</span>
+                <input type="text" id="nameInput" placeholder="Ім'я">
+            </label>
+            <label class="modal-field">
+                <span>Юзернейм</span>
+                <input type="text" id="usernameInput" placeholder="юзернейм">
+            </label>
             <label class="modal-field">
                 <span>Місто, країна</span>
                 <input type="text" id="locationInput" placeholder="напр. Кам'янець-Подільський, Україна">

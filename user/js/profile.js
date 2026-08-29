@@ -36,7 +36,11 @@ function getLevelInfo(xp) {
 
 function buildUsername(name, email) {
   const base = (name || email || "user").split("@")[0].trim().toLowerCase();
-  return "@" + base.replace(/\s+/g, "_");
+  return base.replace(/\s+/g, "_");
+}
+
+function normalizeUsername(value) {
+  return value.trim().toLowerCase().replace(/\s+/g, "_").replace(/^@+/, "");
 }
 
 function escapeText(value) {
@@ -57,9 +61,13 @@ async function loadProfile() {
     const xp = data.xp ?? 0;
 
     // ===== Картка користувача =====
-    document.getElementById("profileName").textContent = data.name || "Без імені";
-    document.getElementById("profileUsername").textContent = buildUsername(data.name, data.email);
+    const displayName = data.name || "Без імені";
+    const username = data.username ? normalizeUsername(data.username) : buildUsername(data.name, data.email);
+    document.getElementById("profileName").textContent = displayName;
+    document.getElementById("profileUsername").textContent = "@" + username;
     document.getElementById("profileEmailText").textContent = data.email || "";
+    document.getElementById("nameInput").value = data.name || "";
+    document.getElementById("usernameInput").value = username;
 
     const location = data.location || "";
     const locationEl = document.getElementById("profileLocation");
@@ -216,17 +224,35 @@ document.getElementById("cancelSettingsBtn")?.addEventListener("click", () => {
 
 document.getElementById("saveSettingsBtn")?.addEventListener("click", async () => {
   if (!currentUid) return;
-  const value = document.getElementById("locationInput").value.trim();
+
+  const name = document.getElementById("nameInput").value.trim();
+  const username = normalizeUsername(document.getElementById("usernameInput").value || "");
+  const location = document.getElementById("locationInput").value.trim();
+
+  if (!name) {
+    alert("Вкажи ім'я");
+    return;
+  }
+  if (!username) {
+    alert("Вкажи юзернейм");
+    return;
+  }
+
   const btn = document.getElementById("saveSettingsBtn");
   btn.disabled = true;
   btn.textContent = "Збереження…";
 
   try {
-    await updateDoc(doc(db, "users", currentUid), { location: value });
+    await updateDoc(doc(db, "users", currentUid), { name, username, location });
+
+    document.getElementById("profileName").textContent = name;
+    document.getElementById("profileUsername").textContent = "@" + username;
+
     const locationEl = document.getElementById("profileLocation");
     const locationSep = document.getElementById("profileLocationSep");
-    locationEl.textContent = value;
-    locationSep.hidden = !value;
+    locationEl.textContent = location;
+    locationSep.hidden = !location;
+
     settingsModal.hidden = true;
   } catch (err) {
     console.error(err);
