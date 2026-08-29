@@ -1,6 +1,7 @@
 import {
   registerUser,
   loginUser,
+  signInWithGoogle,
   setCurrentUser,
   ROLES,
 } from "../../shared/js/data/usersData.js";
@@ -22,6 +23,14 @@ function setupPasswordToggle(toggleBtnId, inputId) {
 setupPasswordToggle("togglePassword", "password");
 setupPasswordToggle("togglePasswordConfirm", "passwordConfirm");
 setupPasswordToggle("toggleLoginPassword", "loginPassword");
+
+// ===== Дата народження: не можна обрати майбутню дату =====
+// max виставляється з JS (а не статично в HTML), щоб "сьогодні" завжди було актуальним,
+// скільки б часу не минуло з моменту, як цей код був написаний.
+const birthDateInput = document.getElementById("birthDate");
+if (birthDateInput) {
+  birthDateInput.max = new Date().toISOString().split("T")[0];
+}
 
 function setSubmitting(form, isSubmitting) {
   const button = form.querySelector('button[type="submit"]');
@@ -73,7 +82,7 @@ if (registerForm) {
     const email = document.querySelector("#registerForm input[type='email']").value;
     const password = document.getElementById("password").value;
     const passwordConfirm = document.getElementById("passwordConfirm").value;
-    const birthDate = document.querySelector("#registerForm input[type='date']").value;
+    const birthDate = document.getElementById("birthDate")?.value || "";
     const accountType =
       document.querySelector('input[name="accountType"]:checked')?.value || ROLES.USER;
     const inviteCode = inviteCodeInput?.value || "";
@@ -85,6 +94,13 @@ if (registerForm) {
 
     if (accountType === ROLES.KAZKAR && !inviteCode.trim()) {
       alert("Для ролі казкаря потрібен код запрошення");
+      return;
+    }
+
+    // Захист про всяк випадок — навіть якщо хтось обійде нативний date picker,
+    // дата народження не може бути в майбутньому.
+    if (birthDate && birthDate > new Date().toISOString().split("T")[0]) {
+      alert("Дата народження не може бути в майбутньому");
       return;
     }
 
@@ -132,3 +148,26 @@ if (loginForm) {
     redirectAfterAuth(result.user);
   });
 }
+
+// ===== "Продовжити з Google" — та сама кнопка є і на логіні, і на реєстрації =====
+document.querySelectorAll(".btn-secondary").forEach((googleBtn) => {
+  const originalHtml = googleBtn.innerHTML;
+
+  googleBtn.addEventListener("click", async () => {
+    googleBtn.disabled = true;
+    googleBtn.textContent = "Зачекайте…";
+
+    const result = await signInWithGoogle();
+
+    googleBtn.disabled = false;
+    googleBtn.innerHTML = originalHtml;
+
+    if (!result.success) {
+      alert(result.error);
+      return;
+    }
+
+    setCurrentUser(result.user);
+    redirectAfterAuth(result.user);
+  });
+});

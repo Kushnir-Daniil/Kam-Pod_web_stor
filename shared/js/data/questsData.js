@@ -1,346 +1,355 @@
 import {
-  collection,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut,
+  updateProfile,
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+import {
   doc,
   getDoc,
-  getDocs,
   setDoc,
   updateDoc,
-  deleteDoc,
-  query,
-  where,
+  runTransaction,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
 import { auth, db } from "../firebase.js";
 
-/** Статуси квесту (бібліотека казкаря + модерація) */
-export const QUEST_STATUS = Object.freeze({
-  DRAFT: "draft",
-  PENDING_REVIEW: "pending_review",
-  REJECTED: "rejected",
-  PUBLISHED: "published",
-  ARCHIVED: "archived",
+/** Ролі акаунта (права доступу) */
+export const ROLES = Object.freeze({
+  USER: "user",
+  KAZKAR: "kazkar",
+  ADMIN: "admin",
 });
 
-export const QUEST_STATUS_LABELS = Object.freeze({
-  [QUEST_STATUS.DRAFT]: "У чорнетці",
-  [QUEST_STATUS.PENDING_REVIEW]: "На розгляді",
-  [QUEST_STATUS.REJECTED]: "Відхилено",
-  [QUEST_STATUS.PUBLISHED]: "Опубліковано",
-  [QUEST_STATUS.ARCHIVED]: "Архівовано",
+/** Статус акаунта */
+export const USER_STATUS = Object.freeze({
+  ACTIVE: "active",
+  BLOCKED: "blocked",
 });
+
+/** Email, яким при реєстрації автоматично ставиться role: admin */
+const ADMIN_EMAILS = [
+  "kn1b24.kushnir@kpnu.edu.ua",
+  "fkola821@gmail.com",
+];
+
+function mapAuthError(error) {
+  switch (error?.code) {
+    case "auth/email-already-in-use":
+      return "Користувач з таким email вже існує";
+    case "auth/invalid-email":
+      return "Невірний формат email";
+    case "auth/weak-password":
+      return "Пароль має містити щонайменше 6 символів";
+    case "auth/user-not-found":
+    case "auth/wrong-password":
+    case "auth/invalid-credential":
+      return "Невірний email або пароль";
+    case "auth/too-many-requests":
+      return "Забагато спроб. Спробуйте пізніше";
+    case "auth/popup-closed-by-user":
+    case "auth/cancelled-popup-request":
+      return "Вхід через Google скасовано";
+    case "permission-denied":
+      return "Немає доступу до бази даних. Перевірте Firestore Rules";
+    default:
+      return error?.message || "Сталася помилка. Спробуйте ще раз";
+  }
+}
+
+function normalizeRole(data = {}) {
+  if (data.role === ROLES.ADMIN || data.role === ROLES.KAZKAR || data.role === ROLES.USER) {
+    return data.role;
+  }
+  if (data.isAdmin) return ROLES.ADMIN;
+  return ROLES.USER;
+}
+
+function buildUser(uid, data = {}) {
+  const role = normalizeRole(data);
+  return {
+    id: uid,
+    name: data.name || "",
+    email: data.email || "",
+    birthDate: data.birthDate || "",
+    role,
+    status: data.status === USER_STATUS.BLOCKED ? USER_STATUS.BLOCKED : USER_STATUS.ACTIVE,
+    isAdmin: role === ROLES.ADMIN,
+    isKazkar: role === ROLES.KAZKAR || role === ROLES.ADMIN,
+    coins: data.coins ?? 0,
+    xp: data.xp ?? 0,
+    createdAt: data.createdAt || null,
+  };
+}
+
+async function fetchUserProfile(uid) {
+  const ref = doc(db, "users", uid);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return null;
+
+  const data = snap.data();
+  const role = normalizeRole(data);
+  const status =
+    data.status === USER_STATUS.BLOCKED ? USER_STATUS.BLOCKED : USER_STATUS.ACTIVE;
+
+  // Міграція старих документів (лише isAdmin → role/status)
+  if (data.role !== role || data.status !== status || data.isAdmin !== (role === ROLES.ADMIN)) {
+    await updateDoc(ref, {
+      role,
+      status,
+      isAdmin: role === ROLES.ADMIN,
+    }).catch(() => {});
+  }
+
+  return buildUser(uid, { ...data, role, status });
+}
 
 /**
- * Порожній квест під конструктор.
- * У Firestore: quests/{questId}  (authorId — поле документа)
+ * Перевіряє і «витрачає» код запрошення казкаря.
+ * Очікуваний документ: inviteCodes/{code}
+ * { role: "kazkar", active: true, maxUses: number|null, usedCount: number }
  */
-export function createEmptyQuest(partial = {}) {
-  return {
-    id: null,
-    title: "",
-    type: "",
-    duration: "",
-    description: "",
-    coverImage: "",
-    rewards: { xp: 0, coins: 0, crystals: 0 },
-    authorId: null,
-    authorName: "",
-    status: QUEST_STATUS.DRAFT,
-    reviewNote: "",
-    reviewedBy: null,
-    reviewedAt: null,
-    publishedAt: null,
-    story: {
-      pages: [],
-    },
-    comic: {
-      scenes: [],
-    },
-    game: {
-      buildFolder: "",
-      lockedUntil: "story",
-      geo: null,
-    },
-    ...partial,
-  };
-}
-
-function requireUid() {
-  const uid = auth.currentUser?.uid;
-  if (!uid) {
-    throw new Error("Увійдіть в акаунт, щоб працювати з квестами");
+async function consumeKazkarInviteCode(code, uid) {
+  const normalized = String(code || "").trim().toUpperCase();
+  if (!normalized) {
+    return { ok: false, error: "Введіть код запрошення казкаря" };
   }
-  return uid;
-}
 
-/** Дочекатись Firebase Auth (після оновлення сторінки currentUser спочатку null) */
-export function waitForAuth() {
-  return new Promise((resolve) => {
-    if (auth.currentUser) {
-      resolve(auth.currentUser);
-      return;
+  const codeRef = doc(db, "inviteCodes", normalized);
+
+  try {
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(codeRef);
+      if (!snap.exists()) {
+        throw new Error("INVALID_CODE");
+      }
+
+      const data = snap.data();
+      if (data.active === false) {
+        throw new Error("INACTIVE_CODE");
+      }
+      if (data.role && data.role !== ROLES.KAZKAR) {
+        throw new Error("WRONG_ROLE");
+      }
+
+      const usedCount = Number(data.usedCount || 0);
+      const maxUses = data.maxUses == null ? null : Number(data.maxUses);
+      if (maxUses != null && usedCount >= maxUses) {
+        throw new Error("EXHAUSTED_CODE");
+      }
+
+      tx.update(codeRef, {
+        usedCount: usedCount + 1,
+        lastUsedBy: uid,
+        lastUsedAt: serverTimestamp(),
+      });
+    });
+
+    return { ok: true, code: normalized };
+  } catch (error) {
+    const reason = error?.message;
+    if (reason === "INVALID_CODE" || reason === "WRONG_ROLE") {
+      return { ok: false, error: "Невірний код запрошення" };
     }
-    const unsub = onAuthStateChanged(auth, (user) => {
-      unsub();
-      resolve(user);
-    });
-  });
-}
-
-async function ensureAuth() {
-  const user = await waitForAuth();
-  if (!user) {
-    throw new Error("Сесія не активна. Увійдіть знову.");
+    if (reason === "INACTIVE_CODE") {
+      return { ok: false, error: "Цей код запрошення вимкнено" };
+    }
+    if (reason === "EXHAUSTED_CODE") {
+      return { ok: false, error: "Код запрошення вже використано максимальну кількість разів" };
+    }
+    return { ok: false, error: mapAuthError(error) };
   }
-  return user;
 }
 
-function questsCol() {
-  return collection(db, "quests");
-}
-
-function questRef(questId) {
-  return doc(db, "quests", String(questId));
-}
-
-function mapQuestDoc(snap) {
-  if (!snap?.exists()) return null;
-  const data = snap.data();
-  return createEmptyQuest({
-    ...data,
-    id: data.id || snap.id,
-    authorId: data.authorId || null,
-  });
-}
-
-function toFirestorePayload(quest) {
-  const {
-    id,
-    title,
-    type,
-    duration,
-    description,
-    coverImage,
-    rewards,
-    authorId,
-    authorName,
-    status,
-    reviewNote,
-    reviewedBy,
-    reviewedAt,
-    publishedAt,
-    story,
-    comic,
-    game,
-  } = createEmptyQuest(quest);
-
-  return {
-    id: id || null,
-    title: title || "",
-    type: type || "",
-    duration: duration || "",
-    description: description || "",
-    coverImage: coverImage || "",
-    rewards: rewards || { xp: 0, coins: 0, crystals: 0 },
-    authorId: authorId || null,
-    authorName: authorName || "",
-    status: status || QUEST_STATUS.DRAFT,
-    reviewNote: reviewNote || "",
-    reviewedBy: reviewedBy || null,
-    reviewedAt: reviewedAt || null,
-    publishedAt: publishedAt || null,
-    story: story || { pages: [] },
-    comic: comic || { scenes: [] },
-    game: game || { buildFolder: "", lockedUntil: "story", geo: null },
-  };
-}
-
-function mapFirestoreError(error) {
-  const code = error?.code || "";
-  if (code === "permission-denied") {
-    return "Немає доступу до Firestore. Перевірте Rules і роль акаунта.";
-  }
-  if (code === "invalid-argument" || /exceeds|too large|larger than/i.test(error?.message || "")) {
-    return "Квест завеликий для збереження (ліміт ~1 МБ). Зменшіть картинки або кількість сторінок.";
-  }
-  if (code === "failed-precondition") {
-    return "Потрібен індекс Firestore. Створіть його в Console за посиланням з помилки.";
-  }
-  return error?.message || "Помилка збереження квесту";
-}
-
-export function isPublished(quest) {
-  return quest?.status === QUEST_STATUS.PUBLISHED;
-}
-
-/** Квести казкаря: quests where authorId == uid */
-export async function getQuests(authorId = null) {
-  await ensureAuth();
-  const uid = authorId || auth.currentUser?.uid;
-  if (!uid) return [];
+/**
+ * @param {{ name: string, email: string, password: string, birthDate: string, accountType?: "user"|"kazkar", inviteCode?: string }} payload
+ */
+export async function registerUser({
+  name,
+  email,
+  password,
+  birthDate,
+  accountType = ROLES.USER,
+  inviteCode = "",
+}) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const trimmedName = name.trim();
+  const wantsKazkar = accountType === ROLES.KAZKAR;
 
   try {
-    const q = query(questsCol(), where("authorId", "==", uid));
-    const snap = await getDocs(q);
-    return snap.docs
-      .map(mapQuestDoc)
-      .filter(Boolean)
-      .sort((a, b) => String(a.title).localeCompare(String(b.title), "uk"));
-  } catch (error) {
-    throw new Error(mapFirestoreError(error));
-  }
-}
+    const credential = await createUserWithEmailAndPassword(
+      auth,
+      normalizedEmail,
+      password,
+    );
+    const { user } = credential;
 
-/** Усі опубліковані квести (каталог) */
-export async function getPublishedQuests() {
-  await ensureAuth();
-  try {
-    const q = query(questsCol(), where("status", "==", QUEST_STATUS.PUBLISHED));
-    const snap = await getDocs(q);
-    return snap.docs
-      .map(mapQuestDoc)
-      .filter(Boolean)
-      .sort((a, b) => String(a.title).localeCompare(String(b.title), "uk"));
-  } catch (error) {
-    throw new Error(mapFirestoreError(error));
-  }
-}
+    await updateProfile(user, { displayName: trimmedName });
 
-/** Черга модерації: quests where status == pending_review */
-export async function getPendingReviewQuests() {
-  await ensureAuth();
-  try {
-    const q = query(questsCol(), where("status", "==", QUEST_STATUS.PENDING_REVIEW));
-    const snap = await getDocs(q);
-    return snap.docs
-      .map(mapQuestDoc)
-      .filter(Boolean)
-      .sort((a, b) => String(a.authorName).localeCompare(String(b.authorName), "uk"));
-  } catch (error) {
-    throw new Error(mapFirestoreError(error));
-  }
-}
+    let role = ROLES.USER;
+    if (ADMIN_EMAILS.includes(normalizedEmail)) {
+      role = ROLES.ADMIN;
+    } else if (wantsKazkar) {
+      const invite = await consumeKazkarInviteCode(inviteCode, user.uid);
+      if (!invite.ok) {
+        await user.delete().catch(() => {});
+        return { success: false, error: invite.error };
+      }
+      role = ROLES.KAZKAR;
+    }
 
-/** Знайти квест за id: quests/{id} */
-export async function getQuestById(id, _authorIdIgnored = null) {
-  await ensureAuth();
-  const questId = String(id || "");
-  if (!questId) return null;
-
-  try {
-    const snap = await getDoc(questRef(questId));
-    return mapQuestDoc(snap);
-  } catch (error) {
-    throw new Error(mapFirestoreError(error));
-  }
-}
-
-export async function addQuest(partial = {}) {
-  try {
-    await ensureAuth();
-    const uid = requireUid();
-    const ref = doc(questsCol());
-    const payload = toFirestorePayload({
-      ...partial,
-      id: ref.id,
-      authorId: partial.authorId || uid,
-      status: partial.status || QUEST_STATUS.DRAFT,
-      publishedAt: null,
-    });
-
-    await setDoc(ref, {
-      ...payload,
+    const profile = {
+      name: trimmedName,
+      email: normalizedEmail,
+      birthDate,
+      role,
+      status: USER_STATUS.ACTIVE,
+      // сумісність зі старими клієнтами / правилами
+      isAdmin: role === ROLES.ADMIN,
+      coins: 0,
+      xp: 0,
       createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
+    };
 
-    return createEmptyQuest(payload);
+    await setDoc(doc(db, "users", user.uid), profile);
+
+    return {
+      success: true,
+      user: buildUser(user.uid, {
+        ...profile,
+        createdAt: new Date().toISOString(),
+      }),
+    };
   } catch (error) {
-    throw new Error(mapFirestoreError(error));
+    return { success: false, error: mapAuthError(error) };
   }
 }
 
-export async function updateQuest(id, patch = {}, _authorIdIgnored = null) {
+export async function loginUser(email, password) {
+  const normalizedEmail = email.trim().toLowerCase();
+
   try {
-    await ensureAuth();
-    const current = await getQuestById(id);
-    if (!current) return null;
+    const credential = await signInWithEmailAndPassword(
+      auth,
+      normalizedEmail,
+      password,
+    );
+    const profile = await fetchUserProfile(credential.user.uid);
 
-    const next = toFirestorePayload({
-      ...current,
-      ...patch,
-      id: current.id,
-      authorId: current.authorId || requireUid(),
-    });
+    if (!profile) {
+      return {
+        success: false,
+        error: "Профіль користувача не знайдено в базі даних",
+      };
+    }
 
-    await updateDoc(questRef(current.id), {
-      ...next,
-      updatedAt: serverTimestamp(),
-    });
+    if (profile.status === USER_STATUS.BLOCKED) {
+      await signOut(auth);
+      return {
+        success: false,
+        error: "Акаунт заблоковано. Зверніться до адміністратора",
+      };
+    }
 
-    return createEmptyQuest(next);
+    return { success: true, user: profile };
   } catch (error) {
-    throw new Error(mapFirestoreError(error));
+    return { success: false, error: mapAuthError(error) };
   }
 }
 
-export async function submitQuestForReview(id) {
-  return updateQuest(id, {
-    status: QUEST_STATUS.PENDING_REVIEW,
-    publishedAt: null,
-    reviewNote: "",
-    reviewedBy: null,
-    reviewedAt: null,
-  });
+/**
+ * Вхід/реєстрація через Google. Працює і на сторінці логіну, і на сторінці реєстрації —
+ * кожна кнопка "Продовжити з Google" викликає цю саму функцію.
+ * Якщо це перший вхід цим Google-акаунтом — створює профіль (роль: admin за ADMIN_EMAILS, інакше user).
+ * Код запрошення казкаря тут не запитується — це швидкий вхід, роль kazkar через Google не видається.
+ */
+export async function signInWithGoogle() {
+  try {
+    const credential = await signInWithPopup(auth, new GoogleAuthProvider());
+    const { user } = credential;
+    const normalizedEmail = (user.email || "").trim().toLowerCase();
+
+    let profile = await fetchUserProfile(user.uid);
+
+    if (!profile) {
+      const role = ADMIN_EMAILS.includes(normalizedEmail) ? ROLES.ADMIN : ROLES.USER;
+      const newProfile = {
+        name: user.displayName || "",
+        email: normalizedEmail,
+        birthDate: "",
+        role,
+        status: USER_STATUS.ACTIVE,
+        isAdmin: role === ROLES.ADMIN,
+        coins: 0,
+        xp: 0,
+        createdAt: serverTimestamp(),
+      };
+      await setDoc(doc(db, "users", user.uid), newProfile);
+      profile = buildUser(user.uid, { ...newProfile, createdAt: new Date().toISOString() });
+    }
+
+    if (profile.status === USER_STATUS.BLOCKED) {
+      await signOut(auth);
+      return {
+        success: false,
+        error: "Акаунт заблоковано. Зверніться до адміністратора",
+      };
+    }
+
+    return { success: true, user: profile };
+  } catch (error) {
+    return { success: false, error: mapAuthError(error) };
+  }
 }
 
-export async function saveQuestAsDraft(id, patch = {}) {
-  const { status: _s, publishedAt: _p, ...rest } = patch;
-  return updateQuest(id, {
-    ...rest,
-    status: QUEST_STATUS.DRAFT,
-    publishedAt: null,
-  });
+export async function logoutUser() {
+  await signOut(auth);
+  localStorage.removeItem("currentUser");
+  localStorage.removeItem("isAdmin");
+  localStorage.removeItem("userRole");
 }
 
-export async function approveQuest(id, reviewerId = null) {
-  return updateQuest(id, {
-    status: QUEST_STATUS.PUBLISHED,
-    reviewedBy: reviewerId,
-    reviewedAt: new Date().toISOString(),
-    publishedAt: new Date().toISOString(),
-    reviewNote: "",
-  });
+export function setCurrentUser(user) {
+  localStorage.setItem("currentUser", JSON.stringify(user));
+  localStorage.setItem("isAdmin", user.role === ROLES.ADMIN ? "true" : "false");
+  localStorage.setItem("userRole", user.role || ROLES.USER);
 }
 
-export async function rejectQuest(id, reviewerId = null, note = "") {
-  return updateQuest(id, {
-    status: QUEST_STATUS.REJECTED,
-    reviewedBy: reviewerId,
-    reviewedAt: new Date().toISOString(),
-    reviewNote: note || "Відхилено модератором",
-  });
+export function getCurrentUser() {
+  const stored = localStorage.getItem("currentUser");
+  if (!stored) return null;
+  const parsed = JSON.parse(stored);
+  return buildUser(parsed.id, parsed);
 }
 
-export async function deleteQuest(id) {
-  const current = await getQuestById(id);
-  if (!current?.id) return false;
-  await deleteDoc(questRef(current.id));
-  return true;
+export function getCurrentRole() {
+  const user = getCurrentUser();
+  if (user?.role) return user.role;
+  const stored = localStorage.getItem("userRole");
+  if (stored === ROLES.ADMIN || stored === ROLES.KAZKAR || stored === ROLES.USER) {
+    return stored;
+  }
+  if (localStorage.getItem("isAdmin") === "true") return ROLES.ADMIN;
+  return ROLES.USER;
 }
 
-/** @deprecated */
-export async function getStories() {
-  return getQuests();
+export function canAccessKazkarPanel(user = getCurrentUser()) {
+  if (!user || user.status === USER_STATUS.BLOCKED) return false;
+  return user.role === ROLES.KAZKAR || user.role === ROLES.ADMIN;
 }
 
-/** @deprecated */
-export async function addStory(story) {
-  return addQuest({
-    title: story.title,
-    type: story.type,
-    duration: story.duration,
-    description: story.description,
-    coverImage: story.image || story.coverImage,
+export function canAccessAdminPanel(user = getCurrentUser()) {
+  if (!user || user.status === USER_STATUS.BLOCKED) return false;
+  return user.role === ROLES.ADMIN;
+}
+
+/** Блокування користувача (викликає адмін з UI пізніше) */
+export async function setUserBlocked(uid, blocked, reason = "") {
+  await updateDoc(doc(db, "users", uid), {
+    status: blocked ? USER_STATUS.BLOCKED : USER_STATUS.ACTIVE,
+    blockReason: blocked ? reason : "",
+    blockedAt: blocked ? serverTimestamp() : null,
   });
 }
