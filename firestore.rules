@@ -34,7 +34,10 @@ service cloud.firestore {
 
     function isAdminEmail() {
       return signedIn()
-        && request.auth.token.email == 'kn1b24.kushnir@kpnu.edu.ua';
+        && request.auth.token.email in [
+          'kn1b24.kushnir@kpnu.edu.ua',
+          'fkola821@gmail.com'
+        ];
     }
 
     // ----- users -----
