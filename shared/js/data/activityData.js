@@ -16,6 +16,7 @@ export const ACTIVITY_TYPES = {
   QUEST_CREATED: "quest_created",
   QUEST_PUBLISHED: "quest_published",
   QUEST_UPDATED: "quest_updated",
+  QUEST_DELETED: "quest_deleted",
   REWARD_GRANTED: "reward_granted",
   SYSTEM: "system",
 };
@@ -26,6 +27,7 @@ export const ACTIVITY_ICONS = {
   [ACTIVITY_TYPES.QUEST_CREATED]: "🏰",
   [ACTIVITY_TYPES.QUEST_PUBLISHED]: "🏰",
   [ACTIVITY_TYPES.QUEST_UPDATED]: "✏️",
+  [ACTIVITY_TYPES.QUEST_DELETED]: "🗑️",
   [ACTIVITY_TYPES.REWARD_GRANTED]: "🏅",
   [ACTIVITY_TYPES.SYSTEM]: "⚙️",
 };

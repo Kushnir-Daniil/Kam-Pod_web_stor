@@ -2,6 +2,7 @@ import {
   addQuest,
   getQuestById,
   updateQuest,
+  deleteQuest,
   createEmptyQuest,
   QUEST_STATUS,
   saveQuestAsDraft,
@@ -171,6 +172,7 @@ const storyPagesEl = document.getElementById("storyPages");
 const comicScenesEl = document.getElementById("comicScenes");
 const saveBtn = document.getElementById("saveQuestBtn");
 const publishQuestBtn = document.getElementById("publishQuestBtn");
+const deleteQuestBtn = document.getElementById("deleteQuestBtn");
 const saveStatus = document.getElementById("saveStatus");
 const gameGeoCity = document.getElementById("gameGeoCity");
 const gameGeoPlace = document.getElementById("gameGeoPlace");
@@ -586,6 +588,45 @@ if (publishQuestBtn) {
   console.error("Кнопку «Опублікувати» не знайдено в DOM");
 }
 
+deleteQuestBtn?.addEventListener("click", async () => {
+  if (!draft.id) return;
+
+  const isAdminUser = getCurrentRole() === ROLES.ADMIN;
+  const canDelete = isAdminUser || draft.status === QUEST_STATUS.DRAFT;
+
+  if (!canDelete) {
+    alert(
+      "Видаляти можна лише чорнетки. Опубліковані квести чи квести на розгляді може видалити тільки адмін.",
+    );
+    return;
+  }
+
+  const ok = confirm(
+    `Видалити квест «${draft.title || "без назви"}» назавжди? Цю дію не можна скасувати — історія, комікс і прив'язка до гри теж зникнуть.`,
+  );
+  if (!ok) return;
+
+  deleteQuestBtn.disabled = true;
+  deleteQuestBtn.textContent = "Видалення…";
+
+  try {
+    await deleteQuest(draft.id);
+    logActivity(
+      ACTIVITY_TYPES.QUEST_DELETED,
+      "Квест видалено",
+      `Видалено квест «${draft.title || "без назви"}»`,
+    ).catch((err) => console.error("Не вдалося записати активність:", err));
+
+    alert("Квест видалено.");
+    window.location.href = isAdminUser ? "all-quests.html" : "quests.html";
+  } catch (err) {
+    console.error(err);
+    alert(err?.message || "Не вдалося видалити квест");
+    deleteQuestBtn.disabled = false;
+    deleteQuestBtn.textContent = "🗑 Видалити квест";
+  }
+});
+
 async function init() {
   if (editId) {
     const existing = await getQuestById(editId);
@@ -596,6 +637,7 @@ async function init() {
       draft.game ??= { buildFolder: "", lockedUntil: "story", geo: null };
       draft.rewards ??= { xp: 0, coins: 0 };
       document.getElementById("editorTitle").textContent = "Редагування квесту";
+      if (deleteQuestBtn) deleteQuestBtn.hidden = false;
     }
   }
 
