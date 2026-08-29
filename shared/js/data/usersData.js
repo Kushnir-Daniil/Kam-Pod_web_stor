@@ -1,6 +1,8 @@
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut,
   updateProfile,
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
@@ -47,6 +49,9 @@ function mapAuthError(error) {
       return "Невірний email або пароль";
     case "auth/too-many-requests":
       return "Забагато спроб. Спробуйте пізніше";
+    case "auth/popup-closed-by-user":
+    case "auth/cancelled-popup-request":
+      return "Вхід через Google скасовано";
     case "permission-denied":
       return "Немає доступу до бази даних. Перевірте Firestore Rules";
     default:
@@ -238,6 +243,51 @@ export async function loginUser(email, password) {
         success: false,
         error: "Профіль користувача не знайдено в базі даних",
       };
+    }
+
+    if (profile.status === USER_STATUS.BLOCKED) {
+      await signOut(auth);
+      return {
+        success: false,
+        error: "Акаунт заблоковано. Зверніться до адміністратора",
+      };
+    }
+
+    return { success: true, user: profile };
+  } catch (error) {
+    return { success: false, error: mapAuthError(error) };
+  }
+}
+
+/**
+ * Вхід/реєстрація через Google. Працює і на сторінці логіну, і на сторінці реєстрації —
+ * кожна кнопка "Продовжити з Google" викликає цю саму функцію.
+ * Якщо це перший вхід цим Google-акаунтом — створює профіль (роль: admin за ADMIN_EMAILS, інакше user).
+ * Код запрошення казкаря тут не запитується — це швидкий вхід, роль kazkar через Google не видається.
+ */
+export async function signInWithGoogle() {
+  try {
+    const credential = await signInWithPopup(auth, new GoogleAuthProvider());
+    const { user } = credential;
+    const normalizedEmail = (user.email || "").trim().toLowerCase();
+
+    let profile = await fetchUserProfile(user.uid);
+
+    if (!profile) {
+      const role = ADMIN_EMAILS.includes(normalizedEmail) ? ROLES.ADMIN : ROLES.USER;
+      const newProfile = {
+        name: user.displayName || "",
+        email: normalizedEmail,
+        birthDate: "",
+        role,
+        status: USER_STATUS.ACTIVE,
+        isAdmin: role === ROLES.ADMIN,
+        coins: 0,
+        xp: 0,
+        createdAt: serverTimestamp(),
+      };
+      await setDoc(doc(db, "users", user.uid), newProfile);
+      profile = buildUser(user.uid, { ...newProfile, createdAt: new Date().toISOString() });
     }
 
     if (profile.status === USER_STATUS.BLOCKED) {
