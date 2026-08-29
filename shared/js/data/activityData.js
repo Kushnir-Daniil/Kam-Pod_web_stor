@@ -15,6 +15,7 @@ export const ACTIVITY_TYPES = {
   USER_REGISTERED: "user_registered",
   QUEST_CREATED: "quest_created",
   QUEST_PUBLISHED: "quest_published",
+  QUEST_UPDATED: "quest_updated",
   REWARD_GRANTED: "reward_granted",
   SYSTEM: "system",
 };
@@ -24,6 +25,7 @@ export const ACTIVITY_ICONS = {
   [ACTIVITY_TYPES.USER_REGISTERED]: "👤",
   [ACTIVITY_TYPES.QUEST_CREATED]: "🏰",
   [ACTIVITY_TYPES.QUEST_PUBLISHED]: "🏰",
+  [ACTIVITY_TYPES.QUEST_UPDATED]: "✏️",
   [ACTIVITY_TYPES.REWARD_GRANTED]: "🏅",
   [ACTIVITY_TYPES.SYSTEM]: "⚙️",
 };

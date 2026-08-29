@@ -229,14 +229,15 @@ async function persistQuest({ asDraft, asPublish }) {
 
   const currentUser = getCurrentUser();
   const isAdminUser = getCurrentRole() === ROLES.ADMIN;
+  const wasAlreadyPublished = draft.status === QUEST_STATUS.PUBLISHED;
 
   if (asPublish) {
     const ok = confirm(
       isAdminUser
-        ? draft.status === QUEST_STATUS.PUBLISHED
-          ? "Оновити опублікований квест?"
+        ? wasAlreadyPublished
+          ? "Зберегти зміни в опублікованому квесті?"
           : "Опублікувати квест одразу на сайт (без черги модерації)?"
-        : draft.status === QUEST_STATUS.PUBLISHED
+        : wasAlreadyPublished
           ? "Квест зникне з каталогу гравців і знову піде на перевірку адміну. Продовжити?"
           : "Надіслати квест адміну на перевірку?",
     );
@@ -264,7 +265,11 @@ async function persistQuest({ asDraft, asPublish }) {
   if (publishQuestBtn) publishQuestBtn.disabled = true;
   saveBtn.textContent = "Збереження…";
   if (publishQuestBtn && asPublish) {
-    publishQuestBtn.textContent = isAdminUser ? "Публікація…" : "Надсилання…";
+    publishQuestBtn.textContent = isAdminUser
+      ? wasAlreadyPublished
+        ? "Оновлення…"
+        : "Публікація…"
+      : "Надсилання…";
   }
 
   try {
@@ -311,12 +316,21 @@ async function persistQuest({ asDraft, asPublish }) {
     saveStatus.classList.remove("error");
     if (asPublish) {
       if (isAdminUser) {
-        saveStatus.textContent = "Опубліковано на сайті.";
-        logActivity(
-          ACTIVITY_TYPES.QUEST_PUBLISHED,
-          "Квест опубліковано",
-          `Опубліковано квест «${payload.title}»`,
-        ).catch((err) => console.error("Не вдалося записати активність:", err));
+        if (wasAlreadyPublished) {
+          saveStatus.textContent = "Зміни збережено.";
+          logActivity(
+            ACTIVITY_TYPES.QUEST_UPDATED,
+            "Квест відредаговано",
+            `Відредаговано квест «${payload.title}»`,
+          ).catch((err) => console.error("Не вдалося записати активність:", err));
+        } else {
+          saveStatus.textContent = "Опубліковано на сайті.";
+          logActivity(
+            ACTIVITY_TYPES.QUEST_PUBLISHED,
+            "Квест опубліковано",
+            `Опубліковано квест «${payload.title}»`,
+          ).catch((err) => console.error("Не вдалося записати активність:", err));
+        }
       } else {
         saveStatus.textContent =
           "Надіслано на перевірку (статус: На розгляді). Квест знято з каталогу.";
@@ -334,8 +348,14 @@ async function persistQuest({ asDraft, asPublish }) {
     saveBtn.disabled = false;
     if (publishQuestBtn) publishQuestBtn.disabled = false;
     saveBtn.textContent = "Зберегти в чорнетку";
-    if (publishQuestBtn) publishQuestBtn.textContent = "Опублікувати";
+    updatePublishButtonLabel();
   }
+}
+
+function updatePublishButtonLabel() {
+  if (!publishQuestBtn) return;
+  publishQuestBtn.textContent =
+    draft.status === QUEST_STATUS.PUBLISHED ? "Зберегти зміни" : "Опублікувати";
 }
 
 function fillMetaFields() {
@@ -355,6 +375,8 @@ function fillMetaFields() {
   gameGeoLat.value = geo?.lat ?? "";
   gameGeoLng.value = geo?.lng ?? "";
   gameGeoRadius.value = geo?.radius ?? 100;
+
+  updatePublishButtonLabel();
 }
 
 metaCover.addEventListener("change", async () => {
