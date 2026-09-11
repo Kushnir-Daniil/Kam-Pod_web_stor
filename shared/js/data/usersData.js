@@ -34,6 +34,7 @@ const ADMIN_EMAILS = [
   "kn1b24.kushnir@kpnu.edu.ua",
   "fkola821@gmail.com",
   "po1b24.fedorova@kpnu.edu.ua",
+  "kn1b22.bilous@kpnu.edu.ua",
 ];
 
 function mapAuthError(error) {
