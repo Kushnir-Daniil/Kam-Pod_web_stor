@@ -118,6 +118,22 @@ service cloud.firestore {
         );
     }
 
+    // ----- questAssets (фото квестів, по одному на документ — обхід ліміту 1 МБ) -----
+    match /questAssets/{assetId} {
+      allow read: if signedIn();
+
+      allow create: if isKazkar()
+        && isActive()
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.image is string;
+
+      allow update, delete: if isAdmin()
+        || (
+          isKazkar()
+          && resource.data.authorId == request.auth.uid
+        );
+    }
+
     // ----- invite codes (казкар) -----
     match /inviteCodes/{code} {
       allow read: if signedIn();

@@ -17,6 +17,8 @@
 | `content/` | Медіаконтент квестів (обкладинки, кадри історії/коміксу) |
 | `README_STRUCTURE.md` | Цей файл — технічна карта проєкту |
 | `README_ADMIN_GUIDE.md` | Інструкція для адмінів: як наповнювати квести без коду |
+| `firestore.rules` | Правила доступу Firestore (включно з фото квестів) |
+| `firebase.json` | Підключення rules для `firebase deploy` |
 
 ---
 
@@ -38,7 +40,8 @@
 | `js/firebase.js` | Підключення Firebase (Auth + Firestore), експорт `auth` і `db` |
 | `js/nav.js` | Нижня навігація (Головна / Спільнота / Квести / Профіль / Адмін) |
 | `js/data/usersData.js` | Реєстрація, логін, вихід, ролі (`user` / `kazkar` / `admin`), коди запрошення |
-| `js/data/questsData.js` | Модель квесту + статуси (`draft` … `archived`); поки IndexedDB, далі — Firestore |
+| `js/data/questsData.js` | Модель квесту + статуси (`draft` … `archived`); документи Firestore |
+| `js/data/questImages.js` | Фото квесту в окремих документах `questAssets` (обхід ліміту 1 МБ) |
 
 ---
 

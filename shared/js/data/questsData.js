@@ -12,6 +12,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
 import { auth, db } from "../firebase.js";
+import { hydrateQuestImages } from "./questImages.js";
 
 /** Статуси квесту (бібліотека казкаря + модерація) */
 export const QUEST_STATUS = Object.freeze({
@@ -113,6 +114,13 @@ function mapQuestDoc(snap) {
   });
 }
 
+async function loadQuestRaw(id) {
+  const questId = String(id || "");
+  if (!questId) return null;
+  const snap = await getDoc(questRef(questId));
+  return mapQuestDoc(snap);
+}
+
 function toFirestorePayload(quest) {
   const {
     id,
@@ -161,7 +169,7 @@ function mapFirestoreError(error) {
     return "Немає доступу до Firestore. Перевірте Rules і роль акаунта.";
   }
   if (code === "invalid-argument" || /exceeds|too large|larger than/i.test(error?.message || "")) {
-    return "Квест завеликий для збереження (ліміт ~1 МБ). Зменшіть картинки або кількість сторінок.";
+    return "Квест завеликий для збереження. Відкрийте його ще раз і збережіть — фото мають піти в окремі документи.";
   }
   if (code === "failed-precondition") {
     return "Потрібен індекс Firestore. Створіть його в Console за посиланням з помилки.";
@@ -197,10 +205,11 @@ export async function getPublishedQuests() {
   try {
     const q = query(questsCol(), where("status", "==", QUEST_STATUS.PUBLISHED));
     const snap = await getDocs(q);
-    return snap.docs
+    const quests = snap.docs
       .map(mapQuestDoc)
       .filter(Boolean)
       .sort((a, b) => String(a.title).localeCompare(String(b.title), "uk"));
+    return Promise.all(quests.map((quest) => hydrateQuestImages(quest, { coversOnly: true })));
   } catch (error) {
     throw new Error(mapFirestoreError(error));
   }
@@ -212,10 +221,11 @@ export async function getPendingReviewQuests() {
   try {
     const q = query(questsCol(), where("status", "==", QUEST_STATUS.PENDING_REVIEW));
     const snap = await getDocs(q);
-    return snap.docs
+    const quests = snap.docs
       .map(mapQuestDoc)
       .filter(Boolean)
       .sort((a, b) => String(a.authorName).localeCompare(String(b.authorName), "uk"));
+    return Promise.all(quests.map((quest) => hydrateQuestImages(quest, { coversOnly: true })));
   } catch (error) {
     throw new Error(mapFirestoreError(error));
   }
@@ -224,12 +234,10 @@ export async function getPendingReviewQuests() {
 /** Знайти квест за id: quests/{id} */
 export async function getQuestById(id, _authorIdIgnored = null) {
   await ensureAuth();
-  const questId = String(id || "");
-  if (!questId) return null;
-
   try {
-    const snap = await getDoc(questRef(questId));
-    return mapQuestDoc(snap);
+    const quest = await loadQuestRaw(id);
+    if (!quest) return null;
+    return hydrateQuestImages(quest);
   } catch (error) {
     throw new Error(mapFirestoreError(error));
   }
@@ -239,7 +247,7 @@ export async function addQuest(partial = {}) {
   try {
     await ensureAuth();
     const uid = requireUid();
-    const ref = doc(questsCol());
+    const ref = partial.id ? questRef(partial.id) : doc(questsCol());
     const payload = toFirestorePayload({
       ...partial,
       id: ref.id,
@@ -263,7 +271,7 @@ export async function addQuest(partial = {}) {
 export async function updateQuest(id, patch = {}, _authorIdIgnored = null) {
   try {
     await ensureAuth();
-    const current = await getQuestById(id);
+    const current = await loadQuestRaw(id);
     if (!current) return null;
 
     const next = toFirestorePayload({
@@ -323,7 +331,7 @@ export async function rejectQuest(id, reviewerId = null, note = "") {
 }
 
 export async function deleteQuest(id) {
-  const current = await getQuestById(id);
+  const current = await loadQuestRaw(id);
   if (!current?.id) return false;
   await deleteDoc(questRef(current.id));
   return true;

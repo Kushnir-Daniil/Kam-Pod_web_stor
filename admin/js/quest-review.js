@@ -33,6 +33,7 @@ if (!canAccessAdminPanel()) {
 
 function resolveImage(src) {
   if (!src) return "";
+  if (src.startsWith("asset:")) return "";
   if (
     src.startsWith("data:") ||
     src.startsWith("http://") ||

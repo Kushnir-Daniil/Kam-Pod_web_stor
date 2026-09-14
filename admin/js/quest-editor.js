@@ -14,6 +14,8 @@ import {
   formatGameLabel,
   getGameByBuildFolder,
 } from "../../shared/js/data/gamesCatalog.js";
+import { persistInlineQuestImages, resolveQuestImage, uploadQuestImage } from "../../shared/js/data/questImages.js";
+import { auth } from "../../shared/js/firebase.js";
 
 const params = new URLSearchParams(window.location.search);
 const editId = params.get("id");
@@ -23,6 +25,8 @@ let draft = createEmptyQuest({
   comic: { scenes: [] },
   game: { buildFolder: "", lockedUntil: "story", geo: null },
 });
+
+const storageQuestId = editId || (crypto.randomUUID?.() || `draft-${Date.now()}`);
 
 function readAsDataUrl(blob) {
   return new Promise((resolve, reject) => {
@@ -99,30 +103,53 @@ async function decodeImageBlob(blob) {
   return { source: img, close: () => {} };
 }
 
-async function compressImageFile(file, maxWidth = 1280, quality = 0.72) {
-  if (!file) return "";
-  if (file.size > 12_000_000) {
-    throw new Error("Файл завеликий (макс. 12 МБ). Обери меншу картинку.");
+function canvasToJpegBlob(canvas, quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("Не вдалося стиснути фото"))),
+      "image/jpeg",
+      quality,
+    );
+  });
+}
+
+async function rasterizeImage(source, maxWidth, quality) {
+  const srcW = source.width || source.videoWidth || 1;
+  const srcH = source.height || source.videoHeight || 1;
+  const scale = Math.min(1, maxWidth / srcW);
+  const width = Math.max(1, Math.round(srcW * scale));
+  const height = Math.max(1, Math.round(srcH * scale));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(source, 0, 0, width, height);
+  return canvasToJpegBlob(canvas, quality);
+}
+
+async function compressImageFile(file) {
+  if (!file) return null;
+  if (file.size > 25_000_000) {
+    throw new Error("Файл завеликий (макс. 25 МБ). Обери інше фото.");
   }
 
   try {
     const blob = await normalizeImageBlob(file);
     const { source, close } = await decodeImageBlob(blob);
-
-    const srcW = source.width || source.videoWidth || 1;
-    const srcH = source.height || source.videoHeight || 1;
-    const scale = Math.min(1, maxWidth / srcW);
-    const width = Math.max(1, Math.round(srcW * scale));
-    const height = Math.max(1, Math.round(srcH * scale));
-
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(source, 0, 0, width, height);
-    close();
-
-    return canvas.toDataURL("image/jpeg", quality);
+    try {
+      let maxWidth = 1400;
+      let quality = 0.72;
+      let out = await rasterizeImage(source, maxWidth, quality);
+      while (out.size > 500_000 && (quality > 0.42 || maxWidth > 720)) {
+        if (quality > 0.42) quality = Math.max(0.42, quality - 0.12);
+        else maxWidth = Math.max(720, Math.round(maxWidth * 0.75));
+        out = await rasterizeImage(source, maxWidth, quality);
+      }
+      return out;
+    } finally {
+      close();
+    }
   } catch (err) {
     if (err?.message?.includes("HEIC")) throw err;
     throw new Error(
@@ -131,10 +158,42 @@ async function compressImageFile(file, maxWidth = 1280, quality = 0.72) {
   }
 }
 
-function showPreview(imgEl, src) {
+async function attachImage(file, slot) {
+  if (saveStatus) {
+    saveStatus.hidden = false;
+    saveStatus.classList.remove("error");
+    saveStatus.textContent = "Завантаження фото…";
+  }
+  try {
+    const blob = await compressImageFile(file);
+    if (!blob) return "";
+    const url = await uploadQuestImage({
+      uid: auth.currentUser?.uid,
+      questId: draft.id || storageQuestId,
+      slot,
+      blob,
+    });
+    if (saveStatus) {
+      saveStatus.hidden = false;
+      saveStatus.classList.remove("error");
+      saveStatus.textContent = "Фото завантажено. Не забудь зберегти квест.";
+    }
+    return url;
+  } catch (err) {
+    if (saveStatus) {
+      saveStatus.hidden = false;
+      saveStatus.classList.add("error");
+      saveStatus.textContent = err?.message || "Не вдалося завантажити фото";
+    }
+    throw err;
+  }
+}
+
+async function showPreview(imgEl, src) {
   if (!imgEl) return;
-  if (src) {
-    imgEl.src = src;
+  const resolved = await resolveQuestImage(src);
+  if (resolved) {
+    imgEl.src = resolved;
     imgEl.hidden = false;
   } else {
     imgEl.removeAttribute("src");
@@ -301,11 +360,6 @@ async function persistQuest({ asDraft, asPublish }) {
     : QUEST_STATUS.DRAFT;
   const willBePublished = targetStatus === QUEST_STATUS.PUBLISHED;
 
-  const payload = buildPayload(currentUser, targetStatus);
-  if (willBePublished) {
-    payload.publishedAt = new Date();
-  }
-
   saveBtn.disabled = true;
   if (publishQuestBtn) publishQuestBtn.disabled = true;
   saveBtn.textContent = "Збереження…";
@@ -318,6 +372,14 @@ async function persistQuest({ asDraft, asPublish }) {
   }
 
   try {
+    const payload = await persistInlineQuestImages(buildPayload(currentUser, targetStatus), {
+      uid: currentUser?.id || auth.currentUser?.uid,
+      questId: draft.id || storageQuestId,
+    });
+    if (willBePublished) {
+      payload.publishedAt = new Date();
+    }
+
     let saved;
     if (draft.id) {
       if (asDraft) {
@@ -335,6 +397,7 @@ async function persistQuest({ asDraft, asPublish }) {
     } else {
       saved = await addQuest({
         ...payload,
+        id: storageQuestId,
         status: targetStatus,
         publishedAt: willBePublished ? new Date() : null,
       });
@@ -432,12 +495,17 @@ gameBuild.addEventListener("change", () => {
 });
 
 metaCover.addEventListener("change", async () => {
+  const file = metaCover.files?.[0];
+  if (!file) return;
+  metaCover.disabled = true;
   try {
-    draft.coverImage = await compressImageFile(metaCover.files?.[0]);
+    draft.coverImage = await attachImage(file, "cover");
     showPreview(metaCoverPreview, draft.coverImage);
   } catch (err) {
     alert(err.message);
     metaCover.value = "";
+  } finally {
+    metaCover.disabled = false;
   }
 });
 
@@ -454,7 +522,7 @@ function renderStoryPages() {
       <label class="editor-field">
         <span>Картинка</span>
         <input type="file" accept="image/*" data-story-image="${index}">
-        <img class="editor-preview" data-story-preview="${index}" alt="" ${page.image ? `src="${page.image}"` : "hidden"}>
+        <img class="editor-preview" data-story-preview="${index}" alt="" hidden>
       </label>
       <label class="editor-field">
         <span>Заголовок розділу</span>
@@ -470,6 +538,7 @@ function renderStoryPages() {
       </label>
     `;
     storyPagesEl.appendChild(block);
+    showPreview(block.querySelector(`[data-story-preview="${index}"]`), page.image);
   });
 }
 
@@ -489,12 +558,17 @@ storyPagesEl.addEventListener("change", async (e) => {
   const imageInput = e.target.closest("[data-story-image]");
   if (!imageInput) return;
   const i = Number(imageInput.dataset.storyImage);
+  const file = imageInput.files?.[0];
+  if (!file) return;
+  imageInput.disabled = true;
   try {
-    draft.story.pages[i].image = await compressImageFile(imageInput.files?.[0]);
+    draft.story.pages[i].image = await attachImage(file, `story-${i}`);
     showPreview(storyPagesEl.querySelector(`[data-story-preview="${i}"]`), draft.story.pages[i].image);
   } catch (err) {
     alert(err.message);
     imageInput.value = "";
+  } finally {
+    imageInput.disabled = false;
   }
 });
 
@@ -533,12 +607,13 @@ function renderComicScenes() {
       <label class="editor-field">
         <span>Картинка сцени</span>
         <input type="file" accept="image/*" data-comic-image="${index}">
-        <img class="editor-preview" data-comic-preview="${index}" alt="" ${scene.image ? `src="${scene.image}"` : "hidden"}>
+        <img class="editor-preview" data-comic-preview="${index}" alt="" hidden>
       </label>
       <div data-dialogues="${index}">${dialoguesHtml}</div>
       <button type="button" class="btn-secondary-editor" data-add-line="${index}">+ Репліка</button>
     `;
     comicScenesEl.appendChild(block);
+    showPreview(block.querySelector(`[data-comic-preview="${index}"]`), scene.image);
   });
 }
 
@@ -578,12 +653,17 @@ comicScenesEl.addEventListener("change", async (e) => {
   const imageInput = e.target.closest("[data-comic-image]");
   if (!imageInput) return;
   const i = Number(imageInput.dataset.comicImage);
+  const file = imageInput.files?.[0];
+  if (!file) return;
+  imageInput.disabled = true;
   try {
-    draft.comic.scenes[i].image = await compressImageFile(imageInput.files?.[0]);
+    draft.comic.scenes[i].image = await attachImage(file, `comic-${i}`);
     showPreview(comicScenesEl.querySelector(`[data-comic-preview="${i}"]`), draft.comic.scenes[i].image);
   } catch (err) {
     alert(err.message);
     imageInput.value = "";
+  } finally {
+    imageInput.disabled = false;
   }
 });
 

@@ -1,6 +1,7 @@
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 import { db } from "../../shared/js/firebase.js";
 import { QUEST_STATUS_LABELS } from "../../shared/js/data/questsData.js";
+import { hydrateQuestImages } from "../../shared/js/data/questImages.js";
 
 const STATUS_CLASS = {
   draft: "draft",
@@ -12,6 +13,7 @@ const STATUS_CLASS = {
 
 function resolveImage(src) {
   if (!src) return "../img/tower.png";
+  if (src.startsWith("asset:")) return "../img/tower.png";
   if (
     src.startsWith("data:") ||
     src.startsWith("http://") ||
@@ -83,7 +85,9 @@ document.querySelectorAll(".quest-mode-tab").forEach((tab) => {
 
 async function loadAllQuests() {
   const snap = await getDocs(collection(db, "quests"));
-  allQuests = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  allQuests = await Promise.all(
+    snap.docs.map((d) => hydrateQuestImages({ id: d.id, ...d.data() }, { coversOnly: true })),
+  );
   render();
 }
 
