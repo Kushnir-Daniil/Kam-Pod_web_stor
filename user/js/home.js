@@ -10,6 +10,7 @@ function escapeText(value) {
 
 function resolveImage(src, fallback = "../img/tower.png") {
   if (!src) return fallback;
+  if (src.startsWith("asset:")) return fallback;
   if (
     src.startsWith("data:") ||
     src.startsWith("http://") ||

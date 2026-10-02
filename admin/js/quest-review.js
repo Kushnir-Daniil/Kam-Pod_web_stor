@@ -9,6 +9,7 @@ import {
   canAccessAdminPanel,
   getCurrentUser,
 } from "../../shared/js/data/usersData.js";
+import { getGameLabel } from "../../shared/js/data/gamesCatalog.js";
 
 const params = new URLSearchParams(window.location.search);
 const questId = params.get("id");
@@ -32,6 +33,7 @@ if (!canAccessAdminPanel()) {
 
 function resolveImage(src) {
   if (!src) return "";
+  if (src.startsWith("asset:")) return "";
   if (
     src.startsWith("data:") ||
     src.startsWith("http://") ||
@@ -144,11 +146,12 @@ function renderMode(mode) {
     return;
   }
 
-  const build = quest.game?.buildFolder || "—";
+  const build = quest.game?.buildFolder || "";
+  const gameLabel = getGameLabel(build) || "—";
   panelEl.innerHTML = `
     <article class="story-page">
       <h2>Гра</h2>
-      <p class="story-page__text">Білд: <code>${escapeHtml(build)}</code></p>
+      <p class="story-page__text">${escapeHtml(gameLabel)}</p>
       <p class="page-placeholder" style="margin-top:12px;">Перегляд гри в модерації — інформаційний. Повна гра доступна гравцям після публікації.</p>
     </article>
   `;

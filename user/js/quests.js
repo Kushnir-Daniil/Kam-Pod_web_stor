@@ -2,6 +2,7 @@ import { getPublishedQuests } from "../../shared/js/data/questsData.js";
 
 function resolveImage(src) {
   if (!src) return "../img/tower.png";
+  if (src.startsWith("asset:")) return "../img/tower.png";
   if (
     src.startsWith("data:") ||
     src.startsWith("http://") ||
