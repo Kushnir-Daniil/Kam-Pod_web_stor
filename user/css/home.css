@@ -54,69 +54,21 @@
   margin: 16px 0 8px;
 }
 
-/* ===== Продовжуй квест ===== */
-.continue-quest-card {
-  display: flex;
-  align-items: stretch;
-  gap: 12px;
-  background: var(--color-border);
+/* ===== Промо-відео замість банера "Продовжуй квест" ===== */
+.home-video-card {
+  display: block;
   border-radius: 20px;
-  padding: 18px;
-  text-decoration: none;
-  color: inherit;
   overflow: hidden;
-  position: relative;
-  min-height: 140px;
+  background: var(--color-border);
+  line-height: 0;
 }
 
-.continue-quest-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  z-index: 1;
-}
-
-.continue-quest-tag {
-  display: inline-block;
-  background: rgba(255, 255, 255, 0.6);
-  color: var(--color-primary-dark);
-  font-size: 10px;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 10px;
-  width: fit-content;
-}
-
-.continue-quest-content h2 {
-  font-size: 17px;
-  font-weight: 700;
-  margin-top: 4px;
-}
-
-.continue-quest-content p {
-  font-size: 12px;
-  color: var(--color-text-muted);
-  flex: 1;
-}
-
-.btn-continue {
-  display: inline-block;
-  background: var(--color-primary);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  padding: 10px 18px;
-  border-radius: 12px;
-  width: fit-content;
-  margin-top: 6px;
-}
-
-.continue-quest-image {
-  width: 40%;
-  object-fit: contain;
-  align-self: center;
-  flex-shrink: 0;
+.home-video {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 220px;
+  object-fit: cover;
 }
 
 /* ===== Останні історії ===== */
